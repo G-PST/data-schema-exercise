@@ -25,12 +25,13 @@ They will be used for cross-project comparison at the
 ## How to Contribute
 
 **If your tool is listed above:** find the GitHub issue for your tool in the
-[Issues tab](../../issues), open the linked YAML file, fill it out, and submit
-a Pull Request — the issue has step-by-step instructions.
+[Issues tab](https://github.com/G-PST/data-schema-excercise/issues), open the
+linked YAML file, fill it out, and submit a Pull Request — the issue has
+step-by-step instructions.
 
 **If your tool is not listed:** open a new issue using the
-[Add New Tool Data Schema](../../issues/new/choose) template and follow the
-instructions there.
+[Add New Tool Data Schema](https://github.com/G-PST/data-schema-excercise/issues/new/choose)
+template and follow the instructions there.
 
 All changes to `main` go through a Pull Request.  A CI check will
 automatically lint your YAML when you open one.
