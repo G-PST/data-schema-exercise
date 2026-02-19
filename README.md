@@ -30,7 +30,7 @@ linked YAML file, fill it out, and submit a Pull Request — the issue has
 step-by-step instructions.
 
 **If your tool is not listed:** open a new issue using the
-[Add New Tool Data Schema](https://github.com/G-PST/data-schema-excercise/issues/new/choose)
+[Add New Tool Data Schema](https://github.com/G-PST/data-schema-excercise/issues/new?template=new_tool_schema.md)
 template and follow the instructions there.
 
 All changes to `main` go through a Pull Request.  A CI check will
