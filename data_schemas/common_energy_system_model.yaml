@@ -1,0 +1,170 @@
+# ============================================================================
+# Data Schema Sheet — CommonEnergySystemModel
+# ============================================================================
+# Please fill out this sheet to describe your data schema / data model.
+# This will be used for cross-project comparison at the G-PST workshop on
+# power system planning interoperability.
+#
+# Instructions:
+#   - Replace placeholder text (in angle brackets) with your information.
+#   - Use ~ (null) for fields that don't apply.
+#   - Use lists (- item) for multi-value fields. Please add entries as needed.
+#   - Keep descriptions concise but specific.
+#   - You do NOT need to detail things we can find in your repo (CI setup,
+#     library dependencies, serialization formats, etc.). Just point us to
+#     the code and we'll review it.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# 1. Identity
+# ---------------------------------------------------------------------------
+identity:
+  schema_name: CommonEnergySystemModel
+  organization: <e.g., NREL>
+  maintainers:
+    - name: <Full Name>
+      affiliation: <Org Name>
+      github: <@handle>
+      email: <email>
+  repository: <https://github.com/...>
+  documentation: <https://...>
+  license: <e.g., BSD-3-Clause>
+  version: <e.g., v2.1.0 or "pre-release">
+  maturity: <Prototype | Active Development | Stable | Production>
+
+  # Point us to the code — we'll review the technical details ourselves
+  link_to_schema_definition: <https://github.com/.../src/models/>
+  link_to_validation_logic: <https://github.com/.../src/validators/>
+  link_to_timeseries_management: <https://github.com/.../src/timeseries/>
+  link_to_entity_relation_diagram: <https://... or ~ if not published>
+
+# ---------------------------------------------------------------------------
+# 2. What It Is & What It Covers
+# ---------------------------------------------------------------------------
+summary:
+  description: |
+    <A paragraph describing what this data schema is, what problem it solves,
+    and who the intended users are.>
+
+  modeling_domains_supported: |
+    <What modeling domains does this data schema support? e.g., capacity expansion
+    (zonal), production cost (nodal), bulk power flow, dynamics, distribution,
+    multi-energy/sector coupling, etc.>
+
+  what_does_it_NOT_cover: |
+    <Equally important — what is explicitly out of scope?>
+
+  data_captured: |
+    <What types of information? e.g., grid topology, device parameters,
+    time series, investment costs, operating constraints, etc.>
+
+  conceptual_structure: |
+    <Is it component-based, bus-based, graph-based, relational,
+    entity-relationship, hierarchical objects, etc.?>
+
+# ---------------------------------------------------------------------------
+# 3. Key Design Decisions
+# ---------------------------------------------------------------------------
+design:
+  key_decisions:
+    - decision: <What did you decide?>
+      rationale: <Why?>
+    - decision: <...>
+      rationale: <...>
+
+  schema_format: |
+    <e.g., Pydantic models, Julia structs, JSON Schema, Protocol Buffers,
+    XML, CIM, custom DSL, other?>
+
+  implementation_languages:
+    - <e.g., Python>
+    - <e.g., Julia>
+
+  database_storage_backend: <e.g., PostgreSQL, file-based, in-memory only, ~>
+
+  interoperability:
+    imports_from:
+      - <e.g., reads OpenDSS files>
+      - <e.g., reads CIM XML>
+    exports_to:
+      - <e.g., exports to PowerSystems.jl>
+      - <e.g., exports CIM XML>
+
+  data_tool_relation: <Data only | Some tool specific | Tightly coupled>
+
+  extensibility: |
+    <How is the schema extended? e.g., plugin system, subclassing,
+    open-ended fields, config-driven, fork-and-modify?>
+
+  units_handling: |
+    <How are units handled? e.g., implicit SI, explicit per-field,
+    unit conversion library, embedded in field names?>
+
+  validation_approach: |
+    <What does validation cover? e.g., schema structure only, range checks,
+    cross-field validation, physical consistency checks (e.g., convexity)?>
+
+  governance: |
+    <Who decides what to include and when to accept changes? e.g., single
+    maintainer, core team with RFC process, community PRs with review?>
+
+# ---------------------------------------------------------------------------
+# 4. Real-World Usage
+# ---------------------------------------------------------------------------
+usage:
+  tools_built_on_schema:
+    - tool: <e.g., PowerSimulations.jl>
+      relationship: <e.g., Uses schema as standard input format>
+      link: <https://github.com/...>
+
+  largest_real_world_dataset: |
+    <Describe the most complex real-world dataset successfully represented
+    in your schema — system size, model type, data source, what was tested.>
+
+  who_is_using_it:
+    - <e.g., "NREL for ReEDS-to-Sienna production cost studies">
+    - <...>
+
+  data_available:
+    - geographic_area: <e.g., US Western Interconnect>
+      content: |
+        <e.g., power flow only, investment cost data, unit commitment
+        constraints on generators, load profiles only, etc.>
+      access: <public | ceii_or_nda | licensed | proprietary>
+
+# ---------------------------------------------------------------------------
+# 5. Limitations & Challenges
+# ---------------------------------------------------------------------------
+challenges:
+  known_limitations:
+    - <e.g., "No native support for sector coupling / multi-carrier">
+    - <...>
+
+  hardest_problems_encountered: |
+    <What has been the most difficult technical challenge in developing
+    or using this data schema? What did you learn?>
+
+# ---------------------------------------------------------------------------
+# 6. Interoperability & Convergence
+# ---------------------------------------------------------------------------
+interoperability:
+  areas_of_overlap_with_other_schemas: |
+    <If you're familiar with any of the other data schemas in this comparison,
+    note specific areas where your approaches overlap or diverge.>
+
+  what_would_convergence_require: |
+    <What would it take for you to align with or contribute to other data schemas if an
+    interoperability-focused tool like a translator adopted a data schema as its core schema layer?
+    What from your approach should still be incorporated?>
+
+  biggest_thing_others_should_know: |
+    <What is the single most important thing — positive or cautionary —
+    that others should understand about your data schema?>
+
+# ---------------------------------------------------------------------------
+# Metadata
+# ---------------------------------------------------------------------------
+card_metadata:
+  prepared_by: <Name>
+  date: <YYYY-MM-DD>
+  info_sheet_version: "1.0"

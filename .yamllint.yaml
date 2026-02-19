@@ -1,0 +1,21 @@
+---
+extends: default
+
+rules:
+  # Allow long lines in YAML — descriptions and URLs can be long
+  line-length:
+    max: 200
+    level: warning
+
+  # Permit comments anywhere
+  comments:
+    min-spaces-from-content: 1
+
+  # Allow truthy values like ~ (null)
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: false
+
+  # Template files contain angle-bracket placeholders — don't flag those
+  # as document-start issues
+  document-start: disable
