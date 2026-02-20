@@ -1,9 +1,9 @@
 # G-PST Data Schema Information Sheets
 
-This repository collects **data schema information sheets** for power systems
-planning tools.  Sheets are filled-out YAML files that describe each tool's
+This repository will be used to collect **data schema information sheets** for power systems
+planning tools. These sheets are YAML (to be filled out by tool owners) that describe each tool's
 data model, design decisions, real-world usage, and interoperability posture.
-They will be used for cross-project comparison at the
+Once collected, these sheets will be used for cross-tool comparison at the upcoming
 **G-PST Power System Planning Interoperability Data Schema Workshop**.
 
 ---
