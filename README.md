@@ -12,7 +12,7 @@ Once collected, these sheets will be used for cross-tool comparison at the upcom
 
 | Tool | YAML Sheet |
 |------|-----------|
-| Sienna Data Model | [`data_schemas/sienna_data_model.yaml`](data_schemas/sienna_data_model.yaml) |
+| Sienna/GridDB Data Model | [`data_schemas/sienna-griddb_data_model.yaml`](data_schemas/sienna-griddb_data_model.yaml) |
 | GenX Data Model | [`data_schemas/genx_data_model.yaml`](data_schemas/genx_data_model.yaml) |
 | Grid Data Model | [`data_schemas/grid_data_model.yaml`](data_schemas/grid_data_model.yaml) |
 | CommonEnergySystemModel | [`data_schemas/common_energy_system_model.yaml`](data_schemas/common_energy_system_model.yaml) |
