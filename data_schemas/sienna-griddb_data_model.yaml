@@ -19,7 +19,7 @@
 # 1. Identity
 # ---------------------------------------------------------------------------
 identity:
-  schema_name: Sienna Data Model
+  schema_name: Sienna/GridDB Data Model
   organization: <e.g., NREL>
   maintainers:
     - name: <Full Name>
