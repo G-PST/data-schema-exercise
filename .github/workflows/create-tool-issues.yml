@@ -1,0 +1,28 @@
+name: Create tool data-schema issues
+
+# Runs automatically the first time these files land on main, and can be
+# triggered manually at any time.  The script is idempotent — re-running it
+# will not create duplicate issues.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/create-tool-issues.yml
+      - .github/scripts/create_tool_issues.py
+  workflow_dispatch:
+
+jobs:
+  create-issues:
+    name: Create one issue per tool
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create issues for each tool
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/create_tool_issues.py
