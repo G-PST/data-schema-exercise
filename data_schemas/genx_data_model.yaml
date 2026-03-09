@@ -1,170 +1,232 @@
 # ============================================================================
 # Data Schema Sheet — GenX Data Model
 # ============================================================================
-# Please fill out this sheet to describe your data schema / data model.
-# This will be used for cross-project comparison at the G-PST workshop on
-# power system planning interoperability.
-#
-# Instructions:
-#   - Replace placeholder text (in angle brackets) with your information.
-#   - Use ~ (null) for fields that don't apply.
-#   - Use lists (- item) for multi-value fields. Please add entries as needed.
-#   - Keep descriptions concise but specific.
-#   - You do NOT need to detail things we can find in your repo (CI setup,
-#     library dependencies, serialization formats, etc.). Just point us to
-#     the code and we'll review it.
-# ============================================================================
 
 # ---------------------------------------------------------------------------
 # 1. Identity
 # ---------------------------------------------------------------------------
 identity:
   schema_name: GenX Data Model
-  organization: <e.g., NREL>
+  organization: Princeton University, Massachusetts Institute of Technology
   maintainers:
-    - name: <Full Name>
-      affiliation: <Org Name>
-      github: <@handle>
-      email: <email>
-  repository: <https://github.com/...>
-  documentation: <https://...>
-  license: <e.g., BSD-3-Clause>
-  version: <e.g., v2.1.0 or "pre-release">
-  maturity: <Prototype | Active Development | Stable | Production>
+    - name: Luca Bonaldo
+      affiliation: Princeton University
+      github: lbonaldo
+      email: lucabonaldo@princeton.edu
+    - name: Jesse Jenkins
+      affiliation: Princeton University
+      github: JesseJenkins
+      email: jessejenkins@princeton.edu
+    - name: Ruaridh Macdonald
+      affiliation: Massachusetts Institute of Technology
+      github: RuaridhMacd
+      email: rmacd@mit.edu
+    - name: Filippo Pecci
+      affiliation: RFF-CMCC European Institute on Economic and the Environment
+      github: filippopecci
+      email: filippo.pecci@cmcc.it
+  repository: https://github.com/GenXProject/GenX.jl
+  documentation: https://genxproject.github.io/GenX.jl/stable/
+  license: GNU General Public License
+  version: 0.4.5
+  maturity: Active Development, Stable
 
   # Point us to the code — we'll review the technical details ourselves
-  link_to_schema_definition: <https://github.com/.../src/models/>
-  link_to_validation_logic: <https://github.com/.../src/validators/>
-  link_to_timeseries_management: <https://github.com/.../src/timeseries/>
-  link_to_entity_relation_diagram: <https://... or ~ if not published>
+  link_to_schema_definition: src/model/resources/resources.jl
+  link_to_validation_logic: ~
+  link_to_timeseries_management: src/load_inputs/load_generators_variability.jl, src/load_inputs/load_demand_data
+  link_to_entity_relation_diagram: ~
 
 # ---------------------------------------------------------------------------
 # 2. What It Is & What It Covers
 # ---------------------------------------------------------------------------
 summary:
   description: |
-    <A paragraph describing what this data schema is, what problem it solves,
-    and who the intended users are.>
+    GenX uses a component-based data model to represent electricity system resources,
+    network topology, demand profiles, and policy constraints for capacity expansion
+    planning. The schema defines typed resources (generators, storage, demand-side, etc.)
+    with technical, economic, and operational attributes, along with zonal network
+    structure and hourly time series. It is designed for energy system modelers,
+    utility planners, and researchers performing least-cost investment and operations
+    optimization of electricity systems.
 
   modeling_domains_supported: |
-    <What modeling domains does this data schema support? e.g., capacity expansion
-    (zonal), production cost (nodal), bulk power flow, dynamics, distribution,
-    multi-energy/sector coupling, etc.>
+    Capacity expansion (zonal or DC-OPF), multi-stage investment planning,
+    unit commitment (integer or linearized clustering),
+    economic dispatch, renewable integration with VRE+storage co-location,
+    hydrogen electrolysis, CCS retrofits, flexible demand, policy constraints
+    (CO2 caps, RPS, capacity reserve margins, min/max capacity requirements).
 
   what_does_it_NOT_cover: |
-    <Equally important — what is explicitly out of scope?>
+    Detailed production cost modeling, multi-sector coupling (gas/heat/transport),
+    AC power flow, distribution networks, market bidding behavior, rolling-horizon
+    adaptive planning.
 
   data_captured: |
-    <What types of information? e.g., grid topology, device parameters,
-    time series, investment costs, operating constraints, etc.>
+    Zonal network topology (zones, transmission lines, losses, expansion limits),
+    resource parameters (investment/FOM/VOM costs, heat rates, ramp rates, min power,
+    startup costs, efficiency, capacity bounds), hourly time series (demand profiles,
+    VRE capacity factors, fuel prices), fuel characteristics (CO2 intensity),
+    policy constraints (CO2 caps, RPS targets, capacity reserve margins),
+    demand-side flexibility (price-elastic curtailment segments, VOLL).
 
   conceptual_structure: |
-    <Is it component-based, bus-based, graph-based, relational,
-    entity-relationship, hierarchical objects, etc.?>
+    Component-based with type hierarchy. All resources subtype AbstractResource
+    (Thermal, Vre, Hydro, Storage, MustRun, FlexDemand, VreStorage, Electrolyzer,
+    etc.). Network is zone-based (transport model) or bus-based (DC-OPF). Resources
+    are assigned to zones. Multiple dispatch on resource types enables different
+    constraint sets per technology. Ongoing development includes support for loading 
+    directly from PowerSystemsInvestmentsPortfolios with initial code available on 
+    branch at https://github.com/GenXProject/GenX.jl/tree/psip-dcopf-expansion
 
 # ---------------------------------------------------------------------------
 # 3. Key Design Decisions
 # ---------------------------------------------------------------------------
 design:
   key_decisions:
-    - decision: <What did you decide?>
-      rationale: <Why?>
-    - decision: <...>
-      rationale: <...>
+    - decision: Dictionary-backed resource structs (typed wrappers around Dict{Symbol,Any})
+      rationale: Flexible schema supporting optional attributes without rigid struct fields; new attributes can be added without breaking existing code
+    - decision: Multiple dispatch with Julia on resource types for constraint generation
+      rationale: Enables modular constraint definitions per technology while sharing common interface functions
+    - decision: CSV-based input format with YAML settings
+      rationale: Accessible to non-programmers; easy integration with spreadsheets and scripting languages
+    - decision: Optional time-domain reduction via k-means/k-medoids clustering
+      rationale: Balances temporal resolution against computational tractability for large systems
+    - decision: Optional ParameterScale flag (MW→GW)
+      rationale: Improves numerical conditioning of LP/MILP solver for large-scale problems
+    - decision: Model construction based on YAML settings file inputs
+      rationale: Easy access to various modeling capabilities (e.g., network representations or losses, linearization of UC, parameter scaling)
 
   schema_format: |
-    <e.g., Pydantic models, Julia structs, JSON Schema, Protocol Buffers,
-    XML, CIM, custom DSL, other?>
+    Julia structs wrapping Dict{Symbol,Any}; resource types subtype AbstractResource.
+    Input data defined as CSVs (one row per resource, columns as attributes).
+    Settings defined as YAML.
 
   implementation_languages:
-    - <e.g., Python>
-    - <e.g., Julia>
+    - Julia
 
-  database_storage_backend: <e.g., PostgreSQL, file-based, in-memory only, ~>
+  database_storage_backend: in-memory, CSVs; future versions will include official integration with PowerSystemsInvestmentsPortfolios in Sienna
 
   interoperability:
     imports_from:
-      - <e.g., reads OpenDSS files>
-      - <e.g., reads CIM XML>
+      - CSV files (flexible, case-insensitive column names)
+      - YAML settings files
+      - Integration with PowerSystemsInvestmentsPortfolios (PSIP/Sienna); currently in development
     exports_to:
-      - <e.g., exports to PowerSystems.jl>
-      - <e.g., exports CIM XML>
+      - CSV outputs (capacity, generation, costs, emissions, shadow prices/duals)
+      - Future integration with PSIP/Sienna; currently in development
 
-  data_tool_relation: <Data only | Some tool specific | Tightly coupled>
+  data_tool_relation: Tightly coupled
 
   extensibility: |
-    <How is the schema extended? e.g., plugin system, subclassing,
-    open-ended fields, config-driven, fork-and-modify?>
+    Subclassing AbstractResource to add new resource types; new constraint modules
+    added in src/model/resources/; @interface macro defines attribute accessors with
+    defaults; dictionary-backed attributes allow open-ended fields without schema
+    changes; settings flags gate optional features and policy modules.
 
   units_handling: |
-    <How are units handled? e.g., implicit SI, explicit per-field,
-    unit conversion library, embedded in field names?>
+    Implicit per-field conventions embedded in column/field names (e.g.,
+    Inv_Cost_per_MWyr, Heat_Rate_MMBTU_per_MWh). Power in MW, energy in MWh,
+    costs in $/MW/yr or $/MWh, emissions in metric tonnes CO2/MMBtu, efficiency
+    as dimensionless fractions. Optional ParameterScale flag rescales to GW/GWh
+    for numerical conditioning.
 
   validation_approach: |
-    <What does validation cover? e.g., schema structure only, range checks,
-    cross-field validation, physical consistency checks (e.g., convexity)?>
+    Required file existence checks, column name validation (case-insensitive matching),
+    time series alignment validation (validatetimebasis), network topology format
+    detection (matrix vs. list with error on mixed formats), settings-dependent
+    input file requirements (e.g., CO2Cap=1 requires CO2_cap.csv), deprecation
+    warnings for legacy formats.
 
   governance: |
-    <Who decides what to include and when to accept changes? e.g., single
-    maintainer, core team with RFC process, community PRs with review?>
+    Multi-university core team (Princeton ZERO Lab, MIT, NYU, Binghamton) with
+    open-source development on GitHub. Community PRs with review; follows ColPrac
+    (SciML contributor guidelines). CI/CD testing pipeline enforces code standards.
 
 # ---------------------------------------------------------------------------
 # 4. Real-World Usage
 # ---------------------------------------------------------------------------
 usage:
   tools_built_on_schema:
-    - tool: <e.g., PowerSimulations.jl>
-      relationship: <e.g., Uses schema as standard input format>
-      link: <https://github.com/...>
+    - tool: GenX.jl
+      relationship: Core optimization tool; schema is tightly coupled to the model
+      link: https://github.com/GenXProject/GenX.jl
 
   largest_real_world_dataset: |
-    <Describe the most complex real-world dataset successfully represented
-    in your schema — system size, model type, data source, what was tested.>
+    Used in national-scale US decarbonization pathway studies, utility integrated
+    resource planning, and state-level clean energy policy analysis. 200+ peer-reviewed
+    publications use GenX methodology. Specific dataset details require maintainer input.
 
   who_is_using_it:
-    - <e.g., "NREL for ReEDS-to-Sienna production cost studies">
-    - <...>
+    - Princeton ZERO Lab for US decarbonization pathway studies
+    - MIT Energy Initiative for technology evaluation (advanced nuclear, long-duration storage)
+    - US utilities for integrated resource planning
+    - State regulators for clean energy policy analysis
+    - Academic researchers internationally
 
   data_available:
-    - geographic_area: <e.g., US Western Interconnect>
+    - geographic_area: Three-zone New England test system
       content: |
-        <e.g., power flow only, investment cost data, unit commitment
-        constraints on generators, load profiles only, etc.>
-      access: <public | ceii_or_nda | licensed | proprietary>
+        Full capacity expansion dataset: thermal/VRE/storage resources with investment
+        costs, hourly demand profiles, VRE capacity factors, transmission network,
+        fuel prices, CO2 policies. Multiple example variants included in repository.
+      access: public
+    - geographic area: United States
+      content: |
+        Full capacity expansion dataset: thermal/VRE/storage resources with investment
+        costs, hourly demand profiles, multiple periods, VRE capacity factors, 
+        transmission network, fuel prices, CO2 policies.
+      access: public (https://zenodo.org/records/12724093)
+    - geographic area: Brazil
+      content: |
+        Full capacity expansion dataset: thermal/VRE/storage resources with investment
+        costs, hourly demand profiles, multiple weather years, VRE capacity factors, 
+        transmission network, fuel prices, CO2 policies.
+      access: public (https://zenodo.org/records/12724093)
 
 # ---------------------------------------------------------------------------
 # 5. Limitations & Challenges
 # ---------------------------------------------------------------------------
 challenges:
   known_limitations:
-    - <e.g., "No native support for sector coupling / multi-carrier">
-    - <...>
+    - Perfect markets assumption (no strategic bidding or market power)
+    - Annualized costs (not NPV/discounted lifecycle costs)
+    - Linear transmission loss model (piecewise approximation of quadratic losses)
+    - No native multi-sector coupling (gas, heat, transport)
+    - No AC power flow (DC-OPF available but not default; DCOPF with line expansion is under development but not in primary release yet)
 
   hardest_problems_encountered: |
-    <What has been the most difficult technical challenge in developing
-    or using this data schema? What did you learn?>
+    Balancing schema flexibility (dictionary-backed attributes for easy extension)
+    against type safety and validation rigor. Maintaining backward compatibility
+    as new resource types and policy modules are added. Improving tractability and 
+    numerical stability via time domain reduction, parameter scaling, and 
+    decomposition algorithms (e.g., Benders decomposition)
 
 # ---------------------------------------------------------------------------
 # 6. Interoperability & Convergence
 # ---------------------------------------------------------------------------
 interoperability:
   areas_of_overlap_with_other_schemas: |
-    <If you're familiar with any of the other data schemas in this comparison,
-    note specific areas where your approaches overlap or diverge.>
+    Overlap with PowerSystems.jl/Sienna in resource component modeling; planned
+    integration via PowerSystemsInvestmentsPortfolios (PSIP). Similar component-based
+    resource abstraction to other capacity expansion tools (e.g., Switch, PyPSA).
 
   what_would_convergence_require: |
-    <What would it take for you to align with or contribute to other data schemas if an
-    interoperability-focused tool like a translator adopted a data schema as its core schema layer?
-    What from your approach should still be incorporated?>
+    A common resource type taxonomy and attribute naming convention. Standardized
+    time series formats. Agreement on unit conventions. GenX's flexible dictionary-
+    backed resource model could facilitate adaptation to a common schema layer 
+    with translation wrappers.
 
   biggest_thing_others_should_know: |
-    <What is the single most important thing — positive or cautionary —
-    that others should understand about your data schema?>
+    GenX's data model is tightly coupled to the optimization tool. The schema is
+    intentionally flexible (dictionary-backed) to support rapid addition of new
+    resource types and policy modules, but this means validation is convention-based
+    rather than enforced by a formal schema definition language.
 
 # ---------------------------------------------------------------------------
 # Metadata
 # ---------------------------------------------------------------------------
 card_metadata:
-  prepared_by: <Name>
-  date: <YYYY-MM-DD>
+  prepared_by: David Cole and Greg Shivley (AI-assisted, GitHub Copilot, based on codebase analysis)
+  date: 2025-03-09
   info_sheet_version: "1.0"
