@@ -227,6 +227,6 @@ interoperability:
 # Metadata
 # ---------------------------------------------------------------------------
 card_metadata:
-  prepared_by: David Cole and Greg Shivley (AI-assisted, GitHub Copilot, based on codebase analysis)
+  prepared_by: David Cole and Greg Schivley (AI-assisted, GitHub Copilot, based on codebase analysis)
   date: 2025-03-09
   info_sheet_version: "1.0"
