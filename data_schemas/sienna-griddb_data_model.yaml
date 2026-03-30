@@ -1,5 +1,5 @@
 # ============================================================================
-# Data Schema Sheet — Sienna Data Model
+# Data Schema Sheet — Sienna Data Model (SiennaSchemas + SiennaGridDB)
 # ============================================================================
 # Please fill out this sheet to describe your data schema / data model.
 # This will be used for cross-project comparison at the G-PST workshop on
@@ -19,152 +19,539 @@
 # 1. Identity
 # ---------------------------------------------------------------------------
 identity:
-  schema_name: Sienna/GridDB Data Model
-  organization: <e.g., NREL>
+  schema_name: Sienna Data Model (SiennaSchemas + SiennaGridDB)
+  organization: NREL
   maintainers:
-    - name: <Full Name>
-      affiliation: <Org Name>
-      github: <@handle>
-      email: <email>
-  repository: <https://github.com/...>
-  documentation: <https://...>
-  license: <e.g., BSD-3-Clause>
-  version: <e.g., v2.1.0 or "pre-release">
-  maturity: <Prototype | Active Development | Stable | Production>
+    - name: Sienna Development Team
+      affiliation: NREL
+  repository: https://github.com/NREL-Sienna/SiennaSchemas
+  db_repository: https://github.com/NREL-Sienna/SiennaGridDB
+  license: BSD-3-Clause
+  version: pre-release
+  maturity: Active Development and adoption
 
   # Point us to the code — we'll review the technical details ourselves
-  link_to_schema_definition: <https://github.com/.../src/models/>
-  link_to_validation_logic: <https://github.com/.../src/validators/>
-  link_to_timeseries_management: <https://github.com/.../src/timeseries/>
-  link_to_entity_relation_diagram: <https://... or ~ if not published>
+  link_to_schema_definition: https://github.com/NREL-Sienna/SiennaSchemas
+  link_to_validation_logic: https://github.com/NREL-Sienna/SiennaGridDB
+  link_to_timeseries_management: N/A (time series management is integrated into SiennaGridDB and the schemas use references to HDF5 storage, but no separate validation logic repository)
+  link_to_entity_relation_diagram: N/A
 
 # ---------------------------------------------------------------------------
 # 2. What It Is & What It Covers
 # ---------------------------------------------------------------------------
 summary:
   description: |
-    <A paragraph describing what this data schema is, what problem it solves,
-    and who the intended users are.>
+    The Sienna Data Model is a language-agnostic schema specification for power
+    systems modeling, defined as JSON Schema (Draft-07) with OpenAPI 3.1.0
+    specifications in the SiennaSchemas repository. SiennaSchemas is the single
+    source of truth from which language-specific implementations are automatically
+    generated for Python (Pydantic), Julia (OpenAPIModels), and others if needed.
+    SiennaGridDB provides the database backend (SQLite 3.45+ with JSONB) and
+    time series management (HDF5). PowerSystems.jl is a specific Julia
+    implementation within the Sienna ecosystem, but it is not a required
+    dependency for adoption — any language with a SQLite driver or JSON Schema
+    library can consume the schema directly.
+
+    Architecture Overview:
+
+                        ┌─────────────────────────────────┐
+                        │         SiennaGridDB            │
+                        │  (SQLite 3.45+ / JSONB + HDF5)  │
+                        │   Persistent Storage & Queries  │
+                        └────────────────┬────────────────┘
+                                         │ reads / writes
+                                         ▼
+                        ┌─────────────────────────────────┐
+                        │     Auto-Generated Models       │
+                        │  ┌───────────┐  ┌─────────────┐ │
+                        │  │  Python   │  │    Julia    │ │
+                        │  │ (Pydantic)│  │  (OpenAPI)  │ │
+                        │  └───────────┘  └─────────────┘ │
+                        │  ┌───────────┐  ┌─────────────┐ │
+                        │  │  SQL DDL  │  │  Others ... │ │
+                        │  └───────────┘  └─────────────┘ │
+                        └────────────────┬────────────────┘
+                                         │ generated from
+                                         ▼
+                        ┌─────────────────────────────────┐
+                        │        SiennaSchemas            │
+                        │  (JSON Schema / OpenAPI 3.1.0)  │
+                        │   Single Source of Truth        │
+                        │                                 │
+                        │  ┌──────┐ ┌────────┐ ┌────────┐ │
+                        │  │ Core │ │  Ops   │ │ Invest │ │
+                        │  └──────┘ └────────┘ └────────┘ │
+                        │          ┌────────┐             │
+                        │          │Dynamics│             │
+                        │          └────────┘             │
+                        └─────────────────────────────────┘
+
+    Data Flow — From Database to Application:
+
+     ┌──────────────────────────────────────────────────────────────────┐
+     │                         SiennaGridDB                             │
+     │               (SQLite 3.45+ / JSONB + HDF5)                      │
+     │           Canonical base data lives here                         │
+     └──────────────────────────┬───────────────────────────────────────┘
+                                │
+                                │  query & extract
+                                ▼
+     ┌──────────────────────────────────────────────────────────────────┐
+     │              Case Generator  (application-specific)              │
+     │                                                                  │
+     │   Reads base data from the DB, applies study-specific filters,   │
+     │   scenarios, and transformations, then writes:                   │
+     │     • JSON files  (OpenAPI-conformant component data)            │
+     │     • HDF5 files  (time series arrays)                           │
+     └───────────┬──────────────────────────────────┬───────────────────┘
+                 │                                  │
+                 ▼                                  ▼
+          ┌─────────────┐                   ┌──────────────┐
+          │  JSON files │                   │  HDF5 files  │
+          │  (OpenAPI   │                   │  (time series│
+          │   models)   │                   │   data)      │
+          └──────┬──────┘                   └──────┬───────┘
+                 │           consumed by           │
+                 ▼                                 ▼
+     ┌──────────────────────────────────────────────────────────────────┐
+     │                     Applications                                 │
+     │                                                                  │
+     │   Any tool that can read JSON + HDF5 can consume the data:       │
+     │                                                                  │
+     │   ┌──────────────────────────────────────────────────────────┐   │
+     │   │  Sienna-specific implementations (Julia)                 │   │
+     │   │    • PowerSystems.jl                                     │   │
+     │   │    • PowerSystemsInvestmentsPortfolios.jl                │   │
+     │   │  (These wrap the OpenAPI models in Sienna's own Julia    │   │
+     │   │   type hierarchy — they are NOT required for adoption)   │   │
+     │   └──────────────────────────────────────────────────────────┘   │
+     │                                                                  │
+     │   ┌──────────────────────────────────────────────────────────┐   │
+     │   │  Any other consumer                                      │   │
+     │   │    • Python scripts using Pydantic models                │   │
+     │   │    • PyPSA, or other tools via JSON/HDF5                 │   │
+     │   │    • Custom applications in any language                 │   │
+     │   └──────────────────────────────────────────────────────────┘   │
+     └──────────────────────────────────────────────────────────────────┘
 
   modeling_domains_supported: |
-    <What modeling domains does this data schema support? e.g., capacity expansion
-    (zonal), production cost (nodal), bulk power flow, dynamics, distribution,
-    multi-energy/sector coupling, etc.>
+    - Capacity expansion (nodal/zonal): investment modeling with supply, storage,
+      and demand-side technologies; financial parameters; policy requirements
+      (carbon caps, RPS, capacity reserve margins, minimum/maximum capacity)
+    - Production cost (nodal): unit commitment with thermal multi-start,
+      piecewise-linear and quadratic cost curves, ramp constraints, time
+      constraints (min up/down time)
+    - Production cost (zonal): transmission interchange limits, area/load zone
+      aggregation
+    - Bulk power flow (steady-state): AC bus models, branch impedance (lines,
+      2W/3W transformers, tap changers, phase-shifting transformers), HVDC
+      (VSC, LCC, TModel). YBus validated for WECC and EI datasets.
+    - Dynamic simulation: generator dynamic components (round rotor machines,
+      excitation systems, turbine governors), inverter dynamic components
+      (renewable energy converters, active/reactive controllers, current control)
+    - Hydro modeling: dispatch, reservoirs with elevation and spillage, turbines
+      with upstream/downstream reservoir topology
+    - Storage: battery and pumped-hydro with efficiency, cycle limits, and
+      state-of-charge tracking
+    - Services: AGC, constant and variable reserves (up/down) as well as reserve groups
+    - Explicit outage representation: geometric distribution forced outages, planned outages,
+      fixed forced outages attachable to any component
+    - Supplemental attributes: plant-level groupings of generators,
+      geographic information, impedance correction data for transformers.
+    - Market Bid representation and ORDC for market modeling.
 
   what_does_it_NOT_cover: |
-    <Equally important — what is explicitly out of scope?>
+    - Distribution-level modeling (no phase-level detail, no split-phase)
+    - Multi-energy/sector coupling (electricity only; no gas, heat, hydrogen)
+    - Model specific constraints or parameters like custom constraints or device formulations.
+    - Black Box Dynamic Models like specific manufacturer binaries
 
   data_captured: |
-    <What types of information? e.g., grid topology, device parameters,
-    time series, investment costs, operating constraints, etc.>
+    - Grid topology (AC/DC buses, arcs, areas, load zones, balancing topologies)
+    - Device parameters (thermal/renewable/hydro generators, storage units,
+      loads, FACTS devices, synchronous condensers)
+    - Branch parameters (lines, transformers, HVDC links with ratings and
+      impedance)
+    - Cost structures (linear, quadratic, piecewise-linear, piecewise-step
+      cost curves; fuel curves; multi-stage startup costs)
+    - Time series (load profiles, renewable availability, operational data
+      via HDF5 with metadata references in SQLite)
+    - Investment data (supply/storage/demand-side technologies, financial
+      parameters, existing capacity, retirement/retrofit potential)
+    - Dynamic model parameters (machine, exciter, governor, inverter
+      controller components)
+    - Policy and requirements (carbon caps/tax, energy share requirements,
+      hourly matching, capacity reserve margins)
+    - Supplemental attributes: many-to-many relationships between
+      components and metadata objects including:
+      - Power plants (ThermalPowerPlant, HydroPowerPlant,
+        RenewablePowerPlant, CombinedCycleBlock, CombinedCycleFractional)
+        that group individual generating units by physical coupling
+        (shared shafts, penstocks, points of common coupling, HRSGs)
+      - Outage models (GeometricDistributionForcedOutage, PlannedOutage,
+        FixedForcedOutage) attachable to any component
+      - Geographic information (GeoJSON-based coordinates on buses)
+      - Impedance correction data for transformers
 
   conceptual_structure: |
-    <Is it component-based, bus-based, graph-based, relational,
-    entity-relationship, hierarchical objects, etc.?>
+    Flat, non-hierarchical component definitions — no inheritance tree or
+    class hierarchy is imposed on adopters. This is a deliberate design
+    choice: each component type (generator, line, bus, etc.) is a
+    self-contained schema definition with its own fields. Adopters are free
+    to organize these components into whatever abstraction hierarchy their
+    existing library already uses (e.g., Julia abstract types, Python class
+    inheritance, relational tables) without being forced to mirror a
+    hierarchy dictated by the schema. This dramatically lowers the adoption
+    barrier because teams do not need to restructure their codebase to
+    conform to an imposed type tree.
+
+    The schema is organized into four domain packages with a clear
+    dependency structure:
+    - Core (no dependencies): shared enumerations (ACBusType, PrimeMovers,
+      ThermalFuels, StorageTech), cost models, curve types, unit system
+    - Operations (depends on Core): topology, branches, static injection
+      devices, services
+    - Investments (depends on Core): technologies, financials, requirements,
+      attributes, regions, portfolio
+    - Dynamics (depends on Core): generator and inverter dynamic components
+
+    Discriminated unions (oneOf with discriminator) support polymorphic types
+    (e.g., multiple cost types distinguished by cost_type field) without
+    requiring a shared base class. In the database layer (SiennaGridDB), a
+    central polymorphic entities table with type references enables uniform
+    querying across all component types while remaining agnostic to how the
+    adopter structures those types in their own code.
+
+
 
 # ---------------------------------------------------------------------------
 # 3. Key Design Decisions
 # ---------------------------------------------------------------------------
 design:
+
   key_decisions:
-    - decision: <What did you decide?>
-      rationale: <Why?>
-    - decision: <...>
-      rationale: <...>
+    - decision: No imposed type hierarchy — flat, composable component definitions
+      rationale: >
+        The schema deliberately avoids prescribing an inheritance tree or
+        class hierarchy. Each component is a self-contained definition.
+        Adopters map these flat definitions onto whatever abstractions their
+        existing library already uses (abstract types in Julia, class
+        hierarchies in Python, relational tables in SQL, interfaces in Go).
+        This means a tool like GenX, PyPSA, or any other project can adopt
+        SiennaSchemas without restructuring their internal data model —
+        they only need to map fields, not conform to an imposed object
+        hierarchy.
+    - decision: Language-agnostic JSON Schema as single source of truth
+      rationale: >
+        Enables automatic code generation for multiple languages (Python,
+        Julia, SQL) from one canonical definition, preventing schema drift
+        and allowing adoption without dependency on any specific language
+        runtime. Teams can use the schema in whichever language fits their
+        workflow.
+    - decision: PowerSystems.jl is an implementation, not a requirement
+      rationale: >
+        PowerSystems.jl is the mature Julia implementation for Sienna, but
+        the schema is defined independently so that Python, Rust, or any other
+        language ecosystem can adopt SiennaSchemas without requiring Julia.
+        This lowers the barrier to adoption for non-Julia teams.
+    - decision: Separate schema specification from database implementation
+      rationale: >
+        SiennaSchemas defines the data contracts; SiennaGridDB implements
+        persistent storage. This separation allows the same schema to be
+        consumed as in-memory objects, database records, or API payloads.
+    - decision: SQLite 3.45+ with JSONB as database backend
+      rationale: >
+        Self-contained, zero-configuration, universally accessible database.
+        Every major language has SQLite drivers. JSONB columns provide
+        flexibility for complex nested parameters (cost curves, ramp limits)
+        without schema explosion. Time series stored in HDF5 for memory
+        efficiency at the data transfer level for multidemansional datasets like forecasts.
+    - decision: Modular domain packages (Core, Operations, Investments, Dynamics)
+      rationale: >
+        Allows selective adoption — a capacity expansion tool only needs
+        Core + Investments, a dynamics tool only needs Core + Dynamics.
+        Reduces coupling and enables independent evolution of each domain.
+    - decision: Discriminated unions for polymorphic types
+      rationale: >
+        Cost models, curve types, and device types use oneOf with
+        discriminator fields, enabling type-safe polymorphism that works
+        across JSON Schema, Pydantic, Julia structs, and SQL alike.
+    - decision: Automated code generation pipeline with schema versioning
+      rationale: >
+        Downstream repositories (Python and Julia for now ) automatically detect
+        new schema releases via polling and open PRs with regenerated code.
+        Prevents manual synchronization errors across the ecosystem.
+    - decision: Supplemental attributes for cross-component relationships
+      rationale: >
+        Power systems data requires many-to-many relationships that do not
+        fit cleanly into a component's own fields — a power plant groups
+        multiple generators by shared physical infrastructure (shafts,
+        penstocks, points of common coupling, HRSGs), outage schedules
+        attach to arbitrary components, and geographic info attaches to
+        buses. These are modeled as supplemental attributes: standalone
+        objects with bidirectional UUID-based maps to the components they
+        relate to. This pattern is critical for interoperability between
+        power flow and production cost modeling — plant objects preserve
+        unit-level identity and physical coupling information when
+        production cost models aggregate generators. Without this, moving
+        from a detailed nodal power flow model to a zonal or aggregated
+        production cost model loses the information needed to disaggregate
+        results back to individual units. The Julia implementation in
+        PowerSystems.jl is mature; SiennaSchemas and SiennaGridDB will
+        incorporate these relationship types in an upcoming release.
+    - decision: Coherent quantity and unit representation at schema and database level
+      rationale: >
+        Unit conversion errors are among the most frequent and costly bugs
+        in multi-tool power systems workflows. When data moves between a
+        capacity expansion tool, a production cost model, and a power flow
+        solver, each may silently assume different units for the same
+        numeric field. By embedding unambiguous unit metadata at the schema
+        and database level, any application reading from SiennaGridDB can
+        trust the physical meaning of every value without relying on
+        external documentation or implicit conventions. This is an active
+        design priority that will make interoperability structurally safe
+        rather than convention-dependent.
+    - decision: Central polymorphic entities table in database
+      rationale: >
+        All physical components register in one entities table with type
+        references, enabling uniform querying and cross-component
+        relationships without knowing the specific device type in advance.
 
   schema_format: |
-    <e.g., Pydantic models, Julia structs, JSON Schema, Protocol Buffers,
-    XML, CIM, custom DSL, other?>
+    JSON Schema (Draft-07) with OpenAPI 3.1.0 specifications. Schemas are
+    organized as individual JSON files per component type. OpenAPI specs
+    serve as the intermediate representation for code generation. Generated
+    implementations include Pydantic V2 models (Python), Julia structs
+    (via openapi-generator), and SQL DDL (SiennaGridDB).
 
   implementation_languages:
-    - <e.g., Python>
-    - <e.g., Julia>
+    - Python (Pydantic V2 models via power-openapi-models)
+    - Julia (PowerOpenAPIModels.jl, PowerSystems.jl)
+    - SQL (SiennaGridDB, SQLite 3.45+)
 
-  database_storage_backend: <e.g., PostgreSQL, file-based, in-memory only, ~>
+  database_storage_backend: |
+    SQLite 3.45+ with JSONB support (SiennaGridDB). Time series data stored
+    in HDF5 files with metadata references in SQLite. Hybrid approach keeps
+    the database lightweight while supporting large temporal datasets. No
+    PostgreSQL dependency required — SQLite is self-contained and portable.
 
   interoperability:
     imports_from:
-      - <e.g., reads OpenDSS files>
-      - <e.g., reads CIM XML>
+      - JSON (native schema format)
+      - CSV (bulk data loading using TableDataParser.jl in the Julia ecosystem)
+      - SQL (direct SQLite access from any language)
+      - PSS/E RAW and PSSE data formats (via PowerFlowDataParser.jl parsers)
+      - MATPOWER case files (via PowerFlowDataParser.jl parsers)
     exports_to:
-      - <e.g., exports to PowerSystems.jl>
-      - <e.g., exports CIM XML>
+      - JSON (native)
+      - SQL (SQLite database files)
+      - HDF5 (time series)
 
-  data_tool_relation: <Data only | Some tool specific | Tightly coupled>
+  data_tool_relation: Data only
 
   extensibility: |
-    <How is the schema extended? e.g., plugin system, subclassing,
-    open-ended fields, config-driven, fork-and-modify?>
+    The schema is extended by adding new JSON Schema files to SiennaSchemas
+    and regenerating downstream implementations. The modular package
+    structure (Core/Operations/Investments/Dynamics) allows new domains to
+    be added without modifying existing ones. Discriminated unions support
+    new type variants without breaking existing schemas. JSONB columns in
+    SiennaGridDB accept flexible nested structures, enabling parameter
+    evolution without database migrations. The OpenAPI code generation
+    pipeline propagates extensions to all language implementations
+    automatically. Supplemental attributes (power plants, outages,
+    geographic info) are the primary mechanism for extending the
+    relationship model — new relationship types can be added without
+    modifying existing component schemas.
 
   units_handling: |
-    <How are units handled? e.g., implicit SI, explicit per-field,
-    unit conversion library, embedded in field names?>
+    Coherent quantity and unit representation at the schema and database
+    level is one of the most important active design priorities. Unit
+    conversion errors are among the most common and costly sources of bugs
+    when moving data between applications (e.g., a capacity expansion tool
+    producing MW values consumed by a power flow tool expecting per-unit).
+    The goal is to make it structurally impossible for data to leave the
+    database in ambiguous units, so that any application reading from
+    SiennaGridDB can trust the physical meaning of every numeric field
+    without relying on external documentation or convention.
+
+    Currently, a dataset-level UnitSystem enumeration provides three
+    options: SYSTEM_BASE, DEVICE_BASE, and NATURAL_UNITS. Cost curves and
+    fuel curves reference the UnitSystem to determine how power values are
+    interpreted (actual megawatts vs. per-unit quantities). Base voltage
+    and base power fields on components establish normalization contexts.
+    The schema is evolving toward explicit per-field unit metadata at the
+    database and JSON Schema level so that quantities are unambiguous
+    regardless of which application reads them — eliminating the class of
+    interoperability errors that arise when tools silently assume different
+    unit conventions for the same numeric field.
 
   validation_approach: |
-    <What does validation cover? e.g., schema structure only, range checks,
-    cross-field validation, physical consistency checks (e.g., convexity)?>
+    Multi-layer validation:
+    (1) JSON Schema level — type constraints, required fields, enumerations,
+    discriminated union enforcement.
+    (2) Pydantic V2 runtime validation — field types, required/optional,
+    cross-field validators in the Python implementation.
+    (3) Database trigger validation — 33 SQLite triggers in SiennaGridDB
+    enforce entity existence (child tables must reference entities table),
+    arc relationship integrity (endpoints must reference topology entities),
+    hydro system constraints (single upstream/downstream reservoir per
+    turbine), and reverse cascade deletion for referential integrity.
+    (4) JSON column validation (in progress) — CHECK constraints for 18
+    JSON columns covering min/max bounds, ramp constraints, and complex
+    cost structures.
+    (5) Domain specific validations are left to the adopting libraries. For instance, is the load
+    larger than the installed capacity? Are the cost curves convex? These are important but
+    not universally applicable, so they are not enforced at the schema or database level. Validations
+    for this issues are implemented in PowerSystems.jl and can be adopted by other implementations as needed.
 
   governance: |
-    <Who decides what to include and when to accept changes? e.g., single
-    maintainer, core team with RFC process, community PRs with review?>
+    NLR-led development team with open-source repositories on GitHub.
+    Contributions via pull requests with review. Schema releases follow
+    semantic versioning and trigger automated code generation across all
+    downstream implementations. No formal RFC process; decisions driven by
+    the Sienna development team at NLR.
 
 # ---------------------------------------------------------------------------
 # 4. Real-World Usage
 # ---------------------------------------------------------------------------
 usage:
   tools_built_on_schema:
-    - tool: <e.g., PowerSimulations.jl>
-      relationship: <e.g., Uses schema as standard input format>
-      link: <https://github.com/...>
+    - tool: PowerSystems.jl
+      relationship: Julia implementation of the Sienna data model for power system analysis
+      link: https://github.com/NREL-Sienna/PowerSystems.jl
+    - tool: PowerSimulations.jl
+      relationship: Production cost modeling and optimization using Sienna data
+      link: https://github.com/NREL-Sienna/PowerSimulations.jl
+    - tool: PowerSimulationsDynamics.jl
+      relationship: Dynamic simulation using Sienna data
+      link: https://github.com/NREL-Sienna/PowerSimulationsDynamics.jl
+    - tool: PowerFlows.jl
+      relationship: Power flow analysis using Sienna data
+      link: https://github.com/NREL-Sienna/PowerFlows.jl
+    - tool: PowerSystemsInvestmentsPortfolios.jl
+      relationship: Capacity expansion data management using Sienna investment schemas
+      link: https://github.com/NREL-Sienna/PowerSystemsInvestmentsPortfolios.jl
+    - tool: PowerSystemsInvestments.jl
+      relationship: Capacity expansion optimization using Sienna data
+      link: https://github.com/NREL-Sienna/PowerSystemsInvestments.jl
+    - tool: power-openapi-models (Python)
+      relationship: Auto-generated Pydantic models from SiennaSchemas
+      link: ~
 
   largest_real_world_dataset: |
-    <Describe the most complex real-world dataset successfully represented
-    in your schema — system size, model type, data source, what was tested.>
+    Specific real-world datasets are subject to CEII restrictions, but the schema has been
+    used with full nodal models of US interconnections for production cost mostly. The adoption of
+    expansion data has been tested as a PoC but currently limited to synthetic datasets. The schema
+    is designed to scale to the largest real-world datasets used in production cost and
+     capacity expansion modeling in Q2, Q3 of 2026.
 
   who_is_using_it:
-    - <e.g., "NREL for ReEDS-to-Sienna production cost studies">
-    - <...>
+    - "NLR for capacity expansion planning research"
+    - "US DOE-funded national laboratory research programs like NTP"
+    - "GenX.jl is developing integration via PowerSystemsInvestmentsPortfolios"
+    - "Academic researchers using the Sienna platform"
 
   data_available:
-    - geographic_area: <e.g., US Western Interconnect>
+    - geographic_area: US test systems
       content: |
-        <e.g., power flow only, investment cost data, unit commitment
-        constraints on generators, load profiles only, etc.>
-      access: <public | ceii_or_nda | licensed | proprietary>
+        Standard IEEE test systems, RTS-GMLC (Reliability Test System),
+        and synthetic network models. Parsers support PSS/E, MATPOWER, and
+        PowerWorld formats for loading existing datasets.
+      access: public
+    - geographic_area: US Western and Eastern Interconnects
+      content: |
+        Production cost modeling datasets derived from NLR studies.
+      access: ceii_or_nda
 
 # ---------------------------------------------------------------------------
 # 5. Limitations & Challenges
 # ---------------------------------------------------------------------------
 challenges:
   known_limitations:
-    - <e.g., "No native support for sector coupling / multi-carrier">
-    - <...>
+    - "Electricity only — no multi-energy/sector coupling (gas, heat, hydrogen)"
+    - "No distribution-level modeling (no phase detail, no split-phase)"
+    - "JSON column validation in SiennaGridDB not yet fully implemented"
+    - "Dynamic model library is limited to a subset of standard models and needs to be expanded for broader applicability"
 
   hardest_problems_encountered: |
-    <What has been the most difficult technical challenge in developing
-    or using this data schema? What did you learn?>
+    Designing a schema that is simultaneously rigorous enough for type-safe
+    code generation across multiple languages and flexible enough to
+    accommodate the diversity of power systems modeling domains (operations,
+    investments, dynamics). The key insight was separating the schema
+    specification (JSON Schema) from implementations (Julia, Python, SQL),
+    using code generation to maintain consistency while allowing each
+    language to provide idiomatic interfaces. Maintaining backward
+    compatibility across auto-generated implementations while evolving the
+    schema remains an ongoing challenge.
+
+    A particularly hard problem is preserving unit-level identity across
+    modeling granularities. Production cost models routinely aggregate
+    generators into plant-level or zonal representations for computational
+    tractability, but power flow analysis requires individual unit
+    parameters. Without an explicit relationship layer (like plant objects),
+    the mapping between aggregated and disaggregated representations is
+    lost, making it impossible to round-trip between power flow and
+    production cost workflows on the same dataset. The supplemental
+    attribute pattern in PowerSystems.jl addresses this; bringing it into
+    SiennaSchemas and SiennaGridDB is an active priority.
 
 # ---------------------------------------------------------------------------
 # 6. Interoperability & Convergence
 # ---------------------------------------------------------------------------
 interoperability:
   areas_of_overlap_with_other_schemas: |
-    <If you're familiar with any of the other data schemas in this comparison,
-    note specific areas where your approaches overlap or diverge.>
+    Overlap with GenX in capacity expansion resource modeling — GenX is
+    actively developing integration via PowerSystemsInvestmentsPortfolios
+    (which is the Julia specific implementation of the schema in the Sienna
+    platform similar to PowerSystems.jl). Overlap with PyPSA in component-based
+    bus-centric topology, cost curve
+    representation, and operational parameters. Overlap with CIM/ENTSO-E in
+    equipment modeling and topology representation, though Sienna focuses on
+    planning/analysis rather than multi-organization exchange. CESM has
+    developed a bidirectional transformer to/from SiennaGridDB, demonstrating
+    that the Sienna data model can serve as a spoke in CESM's hub-and-spoke
+    interchange architecture.
+
+    A key area where Sienna differs from most other schemas in this
+    comparison is the explicit modeling of plant-level groupings via
+    supplemental attributes. Most schemas (GenX, PyPSA, CESM) treat
+    generators as independent entities without representing the physical
+    plant structure (shared shafts, penstocks, HRSGs, points of common
+    coupling). This information is critical for workflows that move between
+    power flow (unit-level) and production cost (aggregated) representations
+    — without it, disaggregating results back to individual units after an
+    aggregated solve requires ad-hoc assumptions.
 
   what_would_convergence_require: |
-    <What would it take for you to align with or contribute to other data schemas if an
-    interoperability-focused tool like a translator adopted a data schema as its core schema layer?
-    What from your approach should still be incorporated?>
+    The Sienna architecture is explicitly designed for convergence: the
+    language-agnostic JSON Schema specification means any tool can generate
+    compatible types in its own language, and the SQLite database backend is
+    universally accessible. Critically, the schema imposes no type hierarchy,
+    so adopters do not need to restructure their internal abstractions to
+    conform — they only need to map flat component definitions onto their
+    existing data model. This makes incremental adoption practical: a tool
+    can start by mapping a few component types and expand over time without
+    an all-or-nothing commitment. Convergence with other schemas would
+    require agreeing on a common component taxonomy, attribute naming
+    conventions, and unit conventions. The CESM transformer already
+    demonstrates this path.
 
   biggest_thing_others_should_know: |
-    <What is the single most important thing — positive or cautionary —
-    that others should understand about your data schema?>
+    The Sienna Data Model is not a Julia library — it is a language-agnostic
+    JSON Schema specification with automated code generation for Python,
+    Julia, and SQL. PowerSystems.jl is one implementation, not the schema
+    itself. The schema deliberately imposes no type hierarchy: component
+    definitions are flat and self-contained, so adopters can map them onto
+    their existing abstractions without restructuring their codebase. Any
+    team can adopt SiennaSchemas in their language of choice without
+    touching Julia and without conforming to an imposed object model. The
+    SQLite database (SiennaGridDB) is accessible from every major
+    programming language, making it a practical interchange format today.
 
 # ---------------------------------------------------------------------------
 # Metadata
 # ---------------------------------------------------------------------------
 card_metadata:
-  prepared_by: <Name>
-  date: <YYYY-MM-DD>
+  prepared_by: Jose Daniel Lara
+  date: "2026-03-30"
   info_sheet_version: "1.0"
