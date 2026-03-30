@@ -35,3 +35,44 @@ template and follow the instructions there.
 
 All changes to `main` go through a Pull Request.  A CI check will
 automatically lint your YAML when you open one.
+
+---
+
+## Presentation Slides (Slidev)
+
+This repository includes a [Slidev](https://sli.dev/) presentation for comparative analysis of the data schemas.
+
+### How to View or Edit the Slides
+
+1. **Install dependencies** (first time only):
+	```bash
+	cd analysis/slidev
+	npm install
+	```
+2. **Start the Slidev dev server** (live preview):
+	```bash
+	npm run dev
+	```
+	Then open the local URL shown in your terminal (usually http://localhost:3030).
+
+3. **Edit slides** in [`analysis/slidev/slides.md`](analysis/slidev/slides.md). Styles are in [`analysis/slidev/style.css`](analysis/slidev/style.css).
+
+4. **Build static slides** (for deployment):
+	```bash
+	npm run build
+	```
+
+5. **Export to PDF or PPTX** (requires [additional dependencies](https://sli.dev/guide/export.html)):
+	```bash
+	npm run export
+	```
+	- For PDF export, ensure [puppeteer](https://www.npmjs.com/package/puppeteer) is installed: `npm install puppeteer`
+	- For PPTX export, install [@slidev/cli](https://www.npmjs.com/package/@slidev/cli) globally if needed.
+
+### Slidev Environment Configuration
+
+- All Slidev dependencies are listed in [`analysis/slidev/package.json`](analysis/slidev/package.json).
+- Custom theme and styles are in [`analysis/slidev/style.css`](analysis/slidev/style.css).
+- The default theme is set in the frontmatter of [`slides.md`](analysis/slidev/slides.md).
+
+For more details, see the [Slidev documentation](https://sli.dev/guide/).

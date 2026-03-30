@@ -1,0 +1,23 @@
+[workspace]
+name = "data-schema-exercise"
+version = "0.1.0"
+description = "G-PST Data Schema Comparative Analysis"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "osx-64", "linux-64"]
+
+[dependencies]
+python = ">=3.11"
+pyyaml = ">=6.0"
+pandas = ">=2.0"
+numpy = ">=1.24"
+matplotlib = ">=3.7"
+seaborn = ">=0.13"
+plotly = ">=5.18"
+networkx = ">=3.1"
+scipy = ">=1.11"
+jupyterlab = ">=4.0"
+ipykernel = ">=6.25"
+python-pptx = ">=1.0.2,<2"
+
+[tasks]
+lab = "jupyter lab analysis/schema_comparison.ipynb"
