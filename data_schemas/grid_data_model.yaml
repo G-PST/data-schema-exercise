@@ -1,5 +1,5 @@
 # ============================================================================
-# Data Schema Sheet — Grid Data Model
+# Data Schema Sheet — Grid Data Models (GDM)
 # ============================================================================
 # Please fill out this sheet to describe your data schema / data model.
 # This will be used for cross-project comparison at the G-PST workshop on
@@ -19,152 +19,253 @@
 # 1. Identity
 # ---------------------------------------------------------------------------
 identity:
-  schema_name: Grid Data Model
-  organization: <e.g., NREL>
+  schema_name: Grid Data Models (GDM)
+  organization: National Renewable Energy Laboratory (NLR)
   maintainers:
-    - name: <Full Name>
-      affiliation: <Org Name>
-      github: <@handle>
-      email: <email>
-  repository: <https://github.com/...>
-  documentation: <https://...>
-  license: <e.g., BSD-3-Clause>
-  version: <e.g., v2.1.0 or "pre-release">
-  maturity: <Prototype | Active Development | Stable | Production>
+    - name: Aadil Latif
+      affiliation: NLR
+      github: AadilLatif
+      email: Aadil.Latif@nlr.gov
+    - name: Tarek Elgindy
+      affiliation: NLR
+      github: tarekelgindy
+      email: tarek.elgindy@nlr.gov
+  repository: https://github.com/NLR-Distribution-Suite/grid-data-models
+  documentation: https://github.com/NLR-Distribution-Suite/grid-data-models#readme
+  license: BSD-3-Clause
+  version: v2.3.1
+  maturity: Production
 
   # Point us to the code — we'll review the technical details ourselves
-  link_to_schema_definition: <https://github.com/.../src/models/>
-  link_to_validation_logic: <https://github.com/.../src/validators/>
-  link_to_timeseries_management: <https://github.com/.../src/timeseries/>
-  link_to_entity_relation_diagram: <https://... or ~ if not published>
+  link_to_schema_definition: https://github.com/NLR-Distribution-Suite/grid-data-models/tree/main/src/gdm/distribution/components
+  link_to_validation_logic: https://github.com/NLR-Distribution-Suite/grid-data-models/tree/main/tests
+  link_to_timeseries_management: https://github.com/NatLabRockies/infrasys/blob/main/src/infrasys/time_series_manager.py
+  link_to_entity_relation_diagram: ~
 
 # ---------------------------------------------------------------------------
 # 2. What It Is & What It Covers
 # ---------------------------------------------------------------------------
 summary:
   description: |
-    <A paragraph describing what this data schema is, what problem it solves,
-    and who the intended users are.>
+    Grid Data Models (GDM) is a Python package providing validated Pydantic data models
+    for power distribution system assets. It provides a single source of truth for
+    component definitions across the NLR Distribution Suite ecosystem, enabling
+    standardized data interchange and analysis. GDM solves the problems of code
+    duplication across tools, lack of cross-object validation in existing standards
+    like CIM, error-prone unit conversions, and inconsistent data serialization.
+    Intended users are power systems researchers, distribution engineers, and tool
+    developers working with distribution network data.
 
   modeling_domains_supported: |
-    <What modeling domains does this data schema support? e.g., capacity expansion
-    (zonal), production cost (nodal), bulk power flow, dynamics, distribution,
-    multi-energy/sector coupling, etc.>
+    Distribution power systems — including network topology (bus-branch),
+    equipment modeling (transformers, regulators, switches, fuses, reclosers,
+    capacitors), distributed energy resources (solar PV, battery storage),
+    load modeling, voltage regulation/control, time-varying profiles (load,
+    irradiance), market/tariff structures, and physical infrastructure
+    (poles, cables, right-of-way). Supports radial and meshed distribution
+    network topologies.
 
   what_does_it_NOT_cover: |
-    <Equally important — what is explicitly out of scope?>
+    Bulk power / transmission systems, generator dynamic models (only voltage
+    source and DER), transient or dynamic analysis (models are static/quasi-static),
+    full CIM coverage (subset of distribution assets), simulation engines
+    (data-only — external tools required), and multi-language support
+    (Python only).
 
   data_captured: |
-    <What types of information? e.g., grid topology, device parameters,
-    time series, investment costs, operating constraints, etc.>
+    Grid topology (bus structure, branch connectivity, substation/feeder hierarchy),
+    device parameters (transformers, branches with sequence or matrix impedance,
+    loads, solar/battery, capacitors, voltage sources), time series (load profiles,
+    solar irradiance, battery state), operational data (in-service status, phase
+    assignments, voltage/thermal limits, controller settings), equipment catalogs,
+    cost models, tariff/market data, and physical infrastructure (poles, coordinates).
 
   conceptual_structure: |
-    <Is it component-based, bus-based, graph-based, relational,
-    entity-relationship, hierarchical objects, etc.?>
+    Hybrid three-layer architecture: (1) Component-based — each asset is a Pydantic
+    Component with typed, validated fields; (2) Bus-based topology — branches connect
+    two buses, devices connect to a single bus; (3) Graph-based analysis — NetworkX
+    undirected/directed graph views for topology algorithms. Container classes include
+    DistributionSystem (all components), CatalogSystem (equipment catalogs),
+    DatasetSystem (cost models), and StructuralSystem (physical infrastructure).
 
 # ---------------------------------------------------------------------------
 # 3. Key Design Decisions
 # ---------------------------------------------------------------------------
 design:
   key_decisions:
-    - decision: <What did you decide?>
-      rationale: <Why?>
-    - decision: <...>
-      rationale: <...>
+    - decision: Pydantic V2 as the schema foundation
+      rationale: Provides type safety, runtime validation, JSON serialization, IDE support, and auto-generated JSON Schema — more practical than UML-based CIM
+    - decision: Equipment models separated from component models
+      rationale: Decouples behavioral model (component) from physical specifications (equipment), enabling equipment reuse across components
+    - decision: Explicit phase enums (A, B, C, N, S1, S2)
+      rationale: Prevents silent phase assignment errors; supports split-phase residential circuits
+    - decision: Both matrix and sequence impedance branch representations
+      rationale: Matrix impedance for detailed electromagnetic analysis with phase coupling; sequence impedance for simplified balanced cases — user chooses fidelity level
+    - decision: Pint-based quantity system for units
+      rationale: Prevents unit conversion bugs by making unit requirements explicit in the type system with dimensionality enforcement
+    - decision: Substation/feeder hierarchy
+      rationale: Mirrors operational structure of distribution utilities; enables filtering and system reduction by operational unit
+    - decision: Time series via infrasys package
+      rationale: Leverages tested infrastructure with efficient memory management via array sharing, avoids reinventing time series handling
+    - decision: JSON serialization via infrasys
+      rationale: Enables portable data exchange without external databases; version-controllable and reproducible
+    - decision: MCP server integration
+      rationale: Exposes programmatic API to LLM agents for natural-language system exploration and modification
+    - decision: Data
+      rationale: Exposes programmatic API to LLM agents for natural-language system exploration and modification
 
   schema_format: |
-    <e.g., Pydantic models, Julia structs, JSON Schema, Protocol Buffers,
-    XML, CIM, custom DSL, other?>
+    Pydantic V2 models. All models inherit from infrasys.Component (which extends
+    pydantic.BaseModel). Cross-field rules via @model_validator decorators. Serialized
+    to/from JSON via DistributionSystem.to_json() / .from_json(). JSON Schema
+    auto-generated from Pydantic models.
 
   implementation_languages:
-    - <e.g., Python>
-    - <e.g., Julia>
+    - Python (3.11+)
 
-  database_storage_backend: <e.g., PostgreSQL, file-based, in-memory only, ~>
+  database_storage_backend: |
+    JSON files (via infrasys, with optional gzip compression); SQLite with both snapshot
+    storage (full system as JSON) and normalized relational tables (per-component topology,
+    assets, switchgear, controllers, geometry). PostgreSQL support planned.
 
   interoperability:
     imports_from:
-      - <e.g., reads OpenDSS files>
-      - <e.g., reads CIM XML>
+      - CIM (IEC 61970) — conceptual alignment with field-level mapping documentation
+      - OpenDSS — via DiTto conversion framework (https://github.com/NLR-Distribution-Suite/ditto)
+      - JSON — native format via infrasys
+      - SQLite — reads distribution systems from normalized relational tables or snapshots (Open PR)
+      - PostgreSQL — reads distribution systems from database (Open PR)
     exports_to:
-      - <e.g., exports to PowerSystems.jl>
-      - <e.g., exports CIM XML>
+      - JSON — native output via infrasys
+      - GeoDataFrame — via DistributionSystem.to_geodataframe()
+      - NetworkX graphs — undirected and directed graph views
+      - OpenDSS — via DiTto conversion framework
+      - SQLite — writes distribution systems as normalized tables and/or snapshots (Open PR)
+      - PostgreSQL — writes distribution systems to database (Open PR)
 
-  data_tool_relation: <Data only | Some tool specific | Tightly coupled>
+  data_tool_relation: Primarily data only, with some built-in logic for model reduction, validation/auto-fix, and change tracking
 
   extensibility: |
-    <How is the schema extended? e.g., plugin system, subclassing,
-    open-ended fields, config-driven, fork-and-modify?>
+    Subclassing — custom components inherit from DistributionComponentBase or concrete
+    types; custom equipment inherits from Component; custom controllers extend controller
+    base classes; custom quantities extend infrasys BaseQuantity. No plugin architecture;
+    extension requires code changes since Pydantic does not support runtime type registration.
 
   units_handling: |
-    <How are units handled? e.g., implicit SI, explicit per-field,
-    unit conversion library, embedded in field names?>
+    Explicit per-field via Pint integration. Custom quantity types defined for voltage,
+    current, resistance, reactance, capacitance, power (active/reactive/apparent),
+    energy, angle, weight, irradiance, and per-unit-length variants. Pint enforces
+    dimensionality at runtime (e.g., cannot assign voltage to a resistance field).
+    Custom unit definitions for var and va. Units serialized as strings in JSON.
 
   validation_approach: |
-    <What does validation cover? e.g., schema structure only, range checks,
-    cross-field validation, physical consistency checks (e.g., convexity)?>
+    Multi-layer: (1) Pydantic type system — field types, required/optional, scalar
+    bounds at construction and deserialization; (2) Cross-object validators — phase
+    consistency (load phases subset of bus phases), voltage agreement between connected
+    buses, branch connectivity rules; (3) System-level MCP diagnostics — phase consistency
+    across network, matrix dimension alignment, connectivity/reachability analysis,
+    orphaned component detection; (4) Execution-time checks — component name uniqueness,
+    graph cycle/isolation detection during construction.
 
   governance: |
-    <Who decides what to include and when to accept changes? e.g., single
-    maintainer, core team with RFC process, community PRs with review?>
+    NLR-led core team with public GitHub repository. Contributions via pull requests
+    with code review. Semantic versioning. Published to PyPI. No formal steering
+    committee or RFC process; decisions driven by NLR development team.
 
 # ---------------------------------------------------------------------------
 # 4. Real-World Usage
 # ---------------------------------------------------------------------------
 usage:
   tools_built_on_schema:
-    - tool: <e.g., PowerSimulations.jl>
-      relationship: <e.g., Uses schema as standard input format>
-      link: <https://github.com/...>
+    - tool: Shift
+      relationship: Synthetic distribution system generation using GDM as the output format
+      link: ~
+    - tool: DiTto
+      relationship: Multi-format model conversion (OpenDSS <-> GDM)
+      link: https://github.com/NLR-Distribution-Suite/ditto
+    - tool: ERAD
+      relationship: Resilience analysis — uses GDM for distribution network input coupled with hazard models
+      link: ~
+    - tool: Cadet-OPT / Cadet-MDAO
+      relationship: Distribution system optimization framework consuming GDM models
+      link: ~
+    - tool: GridAI
+      relationship: PyTorch training dataset generation for generative AI from GDM models
+      link: ~
+    - tool: DistLLM
+      relationship: LLM interface for the NLR Distribution Suite
+      link: ~
+    - tool: gdmloader
+      relationship: Test dataset downloader and helper utilities for GDM
+      link: https://github.com/NLR-Distribution-Suite/gdmloader
 
   largest_real_world_dataset: |
-    <Describe the most complex real-world dataset successfully represented
-    in your schema — system size, model type, data source, what was tested.>
+    GDM models have been built for entire distribution service territories
+    across multiple projects, encompassing full utility-scale feeder networks.
+    Real utility distribution system data is rarely publicly shareable due to
+    infrastructure sensitivity.
 
   who_is_using_it:
-    - <e.g., "NREL for ReEDS-to-Sienna production cost studies">
-    - <...>
+    - "NLR Distribution Suite tools (Shift, ERAD, Cadet-OPT, GridAI, DistLLM)"
+    - "NLR researchers for distribution network modeling and optimization studies"
+    - "Other U.S. national laboratories"
+    - "India adopted GDM as the de facto standard for grid digitization"
+    - "~1,500 PyPI downloads per month"
 
   data_available:
-    - geographic_area: <e.g., US Western Interconnect>
+    - geographic_area: Synthetic test systems
       content: |
-        <e.g., power flow only, investment cost data, unit commitment
-        constraints on generators, load profiles only, etc.>
-      access: <public | ceii_or_nda | licensed | proprietary>
+        Distribution network models with full topology, equipment parameters,
+        load profiles, and DER data. Available via the gdmloader package.
+      access: public
 
 # ---------------------------------------------------------------------------
 # 5. Limitations & Challenges
 # ---------------------------------------------------------------------------
 challenges:
   known_limitations:
-    - <e.g., "No native support for sector coupling / multi-carrier">
-    - <...>
+    - "Distribution-only — no transmission or bulk power system support"
+    - "Python-only — no multi-language support"
+    - "No transient/dynamic analysis — static/quasi-static models only"
 
   hardest_problems_encountered: |
-    <What has been the most difficult technical challenge in developing
-    or using this data schema? What did you learn?>
+    Cross-object validation that CIM cannot enforce (e.g., three-phase loads only on
+    three-phase lines) was a key motivator. Matrix impedance calculation required careful
+    unit conversion handling and numerical stability in Kron reduction. Achieving
+    deterministic graph traversal (DFS) to avoid test flakiness required careful
+    cycle-pruning logic.
 
 # ---------------------------------------------------------------------------
 # 6. Interoperability & Convergence
 # ---------------------------------------------------------------------------
 interoperability:
   areas_of_overlap_with_other_schemas: |
-    <If you're familiar with any of the other data schemas in this comparison,
-    note specific areas where your approaches overlap or diverge.>
+    GDM is conceptually aligned with CIM (IEC 61970) but is not a direct
+    implementation — it is a domain-specific alternative addressing CIM limitations
+    around validation and unit handling. Field-level mapping documentation exists
+    for key components (e.g., DistributionBus ↔ CIM Terminal). Functional overlap
+    with OpenDSS circuit language, but GDM is more structured while DSS is more
+    procedural. Export/import with OpenDSS via DiTto.
 
   what_would_convergence_require: |
-    <What would it take for you to align with or contribute to other data schemas if an
-    interoperability-focused tool like a translator adopted a data schema as its core schema layer?
-    What from your approach should still be incorporated?>
+    GDM's cross-object validation, Pint-based unit handling, and Pydantic type safety
+    are capabilities that should be preserved in any convergence effort. Aligning with
+    a common schema would require mapping GDM's distribution-focused component hierarchy
+    to a broader schema and ensuring that validation depth (phase consistency, connectivity
+    checks) is not lost. GDM's equipment-vs-component separation pattern and explicit
+    phase modeling would need corresponding representations.
 
   biggest_thing_others_should_know: |
-    <What is the single most important thing — positive or cautionary —
-    that others should understand about your data schema?>
+    GDM's primary strength is its built-in cross-object validation, enforcing constraints
+    like "a three-phase load can only connect to a three-phase bus" at the data model level,
+    not as external scripts. This catches data errors at creation time rather than at
+    simulation time, which is a significant practical advantage over CIM or OpenDSS
+    approaches where validation is external or assumed.
 
 # ---------------------------------------------------------------------------
 # Metadata
 # ---------------------------------------------------------------------------
 card_metadata:
-  prepared_by: <Name>
-  date: <YYYY-MM-DD>
+  prepared_by: Aadil Latif
+  date: 2025-03-17
   info_sheet_version: "1.0"
