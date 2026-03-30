@@ -222,13 +222,18 @@ summary:
     querying across all component types while remaining agnostic to how the
     adopter structures those types in their own code.
 
-
+    The current implementation focuses on HTTP/OpenAPI as the validation and
+    data transfer protocol out of convenience, but the underlying JSON Schema
+    definitions do not preclude other protocols. Because the schemas are
+    maintained in standard JSON Schema, they could be used to auto-generate models for
+    RPC-style protocols (e.g., gRPC/Protobuf, Apache Thrift, Cap'n Proto)
+    or other serialization frameworks if performance or streaming
+    requirements demand it in the future.
 
 # ---------------------------------------------------------------------------
 # 3. Key Design Decisions
 # ---------------------------------------------------------------------------
 design:
-
   key_decisions:
     - decision: No imposed type hierarchy — flat, composable component definitions
       rationale: >
