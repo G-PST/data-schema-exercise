@@ -20,10 +20,10 @@
 # ---------------------------------------------------------------------------
 identity:
   schema_name: Sienna Data Model (SiennaSchemas + SiennaGridDB)
-  organization: NREL
+  organization: NLR
   maintainers:
     - name: Sienna Development Team
-      affiliation: NREL
+      affiliation: NLR
   repository: https://github.com/NREL-Sienna/SiennaSchemas
   db_repository: https://github.com/NREL-Sienna/SiennaGridDB
   license: BSD-3-Clause
