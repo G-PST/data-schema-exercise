@@ -31,7 +31,7 @@ TOOLS = [
     ("Grid Data Model",          "grid_data_model.yaml"),
     ("CommonEnergySystemModel",  "common_energy_system_model.yaml"),
     ("PyPSA Data Model",         "pypsa_data_model.yaml"),
-    ("Encoord Data Model",       "encoord_data_model.yaml"),
+    ("SAInt Data Model",       "saint_data_model.yaml"),
     ("CIM/ENTSO-E",              "cim_entso_e.yaml"),
 ]
 

@@ -1,0 +1,192 @@
+# ============================================================================
+# Data Schema Sheet — SAInt Data Model
+# ============================================================================
+# Please fill out this sheet to describe your data schema / data model.
+# This will be used for cross-project comparison at the G-PST workshop on
+# power system planning interoperability.
+#
+# Instructions:
+#   - Replace placeholder text (in angle brackets) with your information.
+#   - Use ~ (null) for fields that don't apply.
+#   - Use lists (- item) for multi-value fields. Please add entries as needed.
+#   - Keep descriptions concise but specific.
+#   - You do NOT need to detail things we can find in your repo (CI setup,
+#     library dependencies, serialization formats, etc.). Just point us to
+#     the code and we'll review it.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# 1. Identity
+# ---------------------------------------------------------------------------
+identity:
+  schema_name: SAInt Data Model
+  organization: encoord
+  maintainers:
+    - name: Jacob Kravits (on behalf of encoord)
+      affiliation: encoord
+      github: kravitsjacob
+      email: jacob@encoord.com
+  repository: ~
+  documentation: docs.encoord.com
+  license: commercial
+  version: 3.8 (as of 2026-03-19)
+  maturity: Production
+
+  # Point us to the code — we'll review the technical details ourselves
+  link_to_schema_definition: https://docs.encoord.com/reference/latest/layers/index.html
+  link_to_validation_logic: ~
+  link_to_timeseries_management: https://docs.encoord.com/reference/latest/layers/scenario.html#reference-layers-scenario-scenario-profile
+  link_to_entity_relation_diagram: https://docs.encoord.com/reference/latest/objects/electric.html
+
+# ---------------------------------------------------------------------------
+# 2. What It Is & What It Covers
+# ---------------------------------------------------------------------------
+summary:
+  description: |
+    The SAInt data model structures multi-energy infrastructure as networks (directed graphs of elementary and auxiliary objects with geometric, topological, relational, and static
+    properties), scenarios (simulation type, time window, settings, controls, constraints, and profiles), and solutions (variables at each calculated time step; base results in
+    files, derived results on demand). It supports integrated planning and analysis across electricity and gas for generation, transmission, and distribution planners who need
+    one coherent representation instead of siloed sector data. Its intended users are industry professionals at utilities, research organizations, consulting firms, and system
+    operators who run simulations and optimizations and exchange network, scenario, and solution artifacts.
+
+  modeling_domains_supported: |
+    - Capacity Expansion
+    - Production Cost (nodal)
+    - Production Cost (zonal)
+    - Balanced Three Phase AC Power Flow (steady-state)
+    - Balanced Three Phase AC Power Flow (timeseries)
+    - Unbalanced Three Phase AC Power Flow (steady-state)
+    - Unbalanced Three Phase AC Power Flow (timeseries)
+    - Steady-state Gas Hydraulic
+    - Dynamic Gas Hydraulic
+    - Thermal Hydraulic
+
+  what_does_it_NOT_cover: |
+    - Electric Dynamics (phasor/emt)
+
+  data_captured: |
+    - grid topology
+    - device parameters
+    - time series
+    - investment costs
+    - operating constraints
+
+  conceptual_structure: |
+    The network is a directed graph of typed elementary objects (nodes, branches, externals) plus auxiliary objects that subset or relate them, carrying geometric, topological, relational, and static
+    properties. Equipment types specialize through inheritance (e.g., a fuel generator is a generator, which is an external), so shared fields live on general types and specifics on subtypes—separate
+    from how objects connect in the graph. Scenarios and time-step solutions layer on that same object graph, so the model is graph-based and object-oriented rather than a flat bus-table or purely
+    relational layout.
+
+# ---------------------------------------------------------------------------
+# 3. Key Design Decisions
+# ---------------------------------------------------------------------------
+design:
+  key_decisions:
+    - decision: |
+        Separate "what" from "how": the network holds the physical / structural "what" (topology, parameters, static properties); scenarios hold the mathematical and operational "how" (study type,
+        solver assumptions, settings, controls, constraints, profiles).
+      rationale: |
+        Integrated planning workflows need to reuse one network across many studies while swapping or aligning assumptions between domains (e.g., electric vs gas vs thermal scenarios). Keeping the
+        network stable and pushing formulation choices to the scenario layer lets teams move assumptions between scenarios without duplicating or rewriting the underlying asset model.
+
+    - decision: |
+        Separate base results from derived results: base results (fundamental outputs from the simulation or optimization) are persisted in the solution file; derived results are computed on demand
+        from those bases (lazy evaluation) and are not pre-written to disk.
+      rationale: |
+        Users do not need to declare every quantity they might inspect before the run. They can execute a study, then explore charts, tables, and aggregates afterward without rerunning or resizing
+        output upfront, at the cost of a short wait when a derived view is first requested.
+
+  schema_format: ~
+
+  implementation_languages: ~
+
+  database_storage_backend: ~
+
+  interoperability:
+    imports_from:
+      - ASCII templates
+      - dot-raw
+      - cyme
+      - synergi gas
+    exports_to:
+      - ASCII templates
+      - dot-raw
+  data_tool_relation: Some tool specific
+
+  extensibility: |
+    The core schema is extended only by the vendor in product releases (no fork-and-modify). Types use specialization (subclassing) within the shipped software. Users extend behavior through the API
+    and plugins (e.g., GUI visualizations), not by altering the persisted data schema.
+
+  units_handling: |
+    A built-in units library defines supported quantities and conversions. Users choose their preferred units for input and display; the software converts consistently between them so values stay
+    coherent across the model.
+
+  validation_approach: |
+    Validation runs continuously as users edit: invalid entries are blocked before they are accepted, including cross-field rules (e.g., a maximum cannot be below its minimum) and graph consistency
+    (e.g., a branch must reference valid nodes). On import, records that fail validation are rejected and the issues are logged so users can correct the source data.
+
+  governance: ~
+
+# ---------------------------------------------------------------------------
+# 4. Real-World Usage
+# ---------------------------------------------------------------------------
+usage:
+  tools_built_on_schema:
+    - tool: SAInt (Scenario Analysis Interface)
+      relationship: Uses schema as standard input format
+      link: https://www.encoord.com/saint
+
+  largest_real_world_dataset: |
+    Due to CEII restrictions, we cannot share "real world" datasets, but we have a large synthetic dataset that can be used for testing and demonstration purposes. Integrated Planning
+    (ACPF steady-state + nodal PCM):Texas (Synthetic ERCOT model)
+
+  who_is_using_it:
+    - Grid operators
+    - Utilities
+    - Consultants
+    - Researchers
+
+  data_available:
+    - geographic_area: user-customizable
+      content: |
+        On our user forum, we have several example datasets available for download (e.g., Texas Synthetic ERCOT model) which help users get started with using and understanding SAInt.
+        For practical applications, most SAInt users have their own data for their own systems.
+      access: user-customizable
+
+# ---------------------------------------------------------------------------
+# 5. Limitations & Challenges
+# ---------------------------------------------------------------------------
+challenges:
+  known_limitations:
+    - No support for electric dynamics (phasor/emt)
+
+  hardest_problems_encountered: |
+    The most difficult problem is bringing together data from different tools into a single coherent dataset. We refer to a single coherent dataset as an "Integrated Planning Model" (IPM). The SAInt
+    data model is designed to support such a dataset, but populating a dataset in practice can be challenging because of the need to bring together data from different tools. The biggest challenge
+    is often the simple things such as naming conventions and data availability, even when the data is coming from different places within the same organization.
+
+# ---------------------------------------------------------------------------
+# 6. Interoperability & Convergence
+# ---------------------------------------------------------------------------
+interoperability:
+  areas_of_overlap_with_other_schemas: |
+    There is no direct overlap with other schemas that we are aware of, but we do our best to support interoperability with other schemas through import/export capabilities. Conceptually, the SAInt
+    data model is similar to the common-infrastructure data model, but with a focus on multi-energy infrastructure and integrated planning.
+
+  what_would_convergence_require: |
+    Meaningful convergence would require a software-agnostic data schema that can represent timeseries scenario analysis in one coherent model across capacity expansion, production-cost modeling, AC
+    power flow, and dynamic domains.
+    Even with such a schema, different tools will still emphasize different abstractions; convergence therefore also depends on explicit translation contracts (semantics, required vs. optional fields,
+    versioning) between a common layer and each tool's native representation.
+
+  biggest_thing_others_should_know: |
+    The SAInt data model is a production-grade schema that already implements the hard part convergence would need at the data layer: a single network representation with a time-series scenario layer
+    so capacity expansion, production-cost modeling, and AC power flow can share one underlying model.
+
+# ---------------------------------------------------------------------------
+# Metadata
+# ---------------------------------------------------------------------------
+card_metadata:
+  prepared_by: Jacob Kravits
+  date: 2026-03-19
+  info_sheet_version: "1.0"
