@@ -340,6 +340,17 @@ design:
     the database lightweight while supporting large temporal datasets. No
     PostgreSQL dependency required — SQLite is self-contained and portable.
 
+    The SQL schema is initially implemented on SQLite for its zero-configuration
+    portability, but the design deliberately avoids SQLite-specific features
+    (e.g., ROWID-dependent patterns, SQLite-only type affinity quirks) that
+    would preclude migration to other SQL backends such as PostgreSQL, DuckDB,
+    or MySQL. This keeps the door open for deployments that require concurrent
+    multi-user access, server-based architectures, or analytical query
+    performance beyond what SQLite provides. This is feasible because the
+    SQL DDL is auto-generated from the same JSON Schema source of truth,
+    so retargeting a different SQL dialect requires only a new generator
+    backend rather than a manual rewrite of the database schema.
+
   interoperability:
     imports_from:
       - JSON (native schema format)
