@@ -20,143 +20,253 @@
 # ---------------------------------------------------------------------------
 identity:
   schema_name: PyPSA Data Model
-  organization: <e.g., NREL>
+  organization: Technische Universitaet Berlin
   maintainers:
-    - name: <Full Name>
-      affiliation: <Org Name>
-      github: <@handle>
-      email: <email>
-  repository: <https://github.com/...>
-  documentation: <https://...>
-  license: <e.g., BSD-3-Clause>
-  version: <e.g., v2.1.0 or "pre-release">
-  maturity: <Prototype | Active Development | Stable | Production>
+    - name: Fabian Neumann
+      affiliation: Technische Universitaet Berlin
+      github: fneum
+      email: f.neumann@tu-berlin.de 
+    - name: Fabian Hofmann
+      affiliation: Open Energy Transition
+      github: FabianHofmann
+      email: fabian.hofmann@openenergytransition.org
+    - name: Lukas Trippe
+      affiliation: Technische Universitaet Berlin
+      github: lkstrp
+      email: lkstrp@pm.me
+  repository: https://github.com/PyPSA/PyPSA
+  documentation: https://docs.pypsa.org
+  license: MIT
+  version: "1.1.2"
+  maturity: Production
 
   # Point us to the code — we'll review the technical details ourselves
-  link_to_schema_definition: <https://github.com/.../src/models/>
-  link_to_validation_logic: <https://github.com/.../src/validators/>
-  link_to_timeseries_management: <https://github.com/.../src/timeseries/>
-  link_to_entity_relation_diagram: <https://... or ~ if not published>
+  link_to_schema_definition: https://github.com/PyPSA/PyPSA/tree/master/pypsa/data
+  link_to_validation_logic: https://github.com/PyPSA/PyPSA/blob/master/pypsa/consistency.py
+  # Note: validation is being overhauled, migrating to Pydantic and Pandera.
+  # The linked file will be replaced soon.
+  link_to_timeseries_management: https://github.com/PyPSA/PyPSA/blob/master/pypsa/network/index.py
+  link_to_entity_relation_diagram: ~
 
 # ---------------------------------------------------------------------------
 # 2. What It Is & What It Covers
 # ---------------------------------------------------------------------------
 summary:
   description: |
-    <A paragraph describing what this data schema is, what problem it solves,
-    and who the intended users are.>
-
+    The PyPSA data model uses a network as the top-level Python object, holding a 
+    dict like store of all component instances (buses, generators, lines, etc.) and
+    shared dimensions: time series, optional multi-horizon investment periods, and an
+    optional scenario dimension for stochastic networks. Each component type carries a 
+    DataFrame for static attributes and a dict of DataFrames for time-varying ones, all
+    anchored to the network's shared dimensions. The attribute schema is declared in 
+    CSV files and is currently being migrated to Pydantic and Pandera for a stricter 
+    validation. The underlying data can be accessed through different interfaces, such 
+    as an xarray accessor which exposes labeled N-dimensional arrays with named
+    dimensions that enable automatic alignment, broadcasting, and index-based selection
+    across the full parameter space.
+    
   modeling_domains_supported: |
-    <What modeling domains does this data schema support? e.g., capacity expansion
-    (zonal), production cost (nodal), bulk power flow, dynamics, distribution,
-    multi-energy/sector coupling, etc.>
+    - Economic dispatch (ED) with integer and/or continuous unit commitment
+      formulations, renewable availability, storage incl. hydro reservoirs,
+      demand elasticity, and carrier conversion
+    - Linear optimal power flow (LOPF) for meshed AC-DC networks with
+      optional loss approximations
+    - Security-constrained LOPF (SCLOPF) with N-1 contingency analysis
+    - Capacity expansion planning (CEP) with continuous and discrete
+      investment decisions for generation, storage, conversion, and
+      transmission
+    - Pathway planning with co-optimised multi-period investment
+    - Multi-carrier energy sector coupling (electricity, heat, hydrogen, gas, etc.)
+    - Static non-linear AC/DC (Newton-Raphson) and linearised power flow
+      approximation
+    Various solution methods are supported across these domains, including
+    stochastic programming (risk-neutral and risk-averse CVaR formulations),
+    Modeling to Generate Alternatives (MGA), rolling-horizon foresight
+    optimisation, and optimization problem reduction techniques such as
+    spatial clustering and temporal clustering (representative periods,
+    segmentation).
 
   what_does_it_NOT_cover: |
-    <Equally important — what is explicitly out of scope?>
+    PyPSA is designed from an economical and operational research
+    perspective. Some features are technically available but are not the
+    focus of the framework:
+    - Electrical engineering detail needed for low voltage distribution models. 
+      Newton-Raphson is available but the core workflow uses LOPF.
+    - Imperfect competition / game-theoretic market models
+    - Multi-objective optimisation
+    The following can be implemented via custom constraints but are not
+    supported out of the box:
+    - Endogenous technology learning
+    - Maintenance scheduling optimisation
+    - Capacity market mechanisms
+    - ...
 
   data_captured: |
-    <What types of information? e.g., grid topology, device parameters,
-    time series, investment costs, operating constraints, etc.>
+    - Grid topology (buses, lines, transformers, links)
+    - Component attributes (generators, loads, stores, storage units, shunt
+      impedances) — each carrying technical, economic, and operational parameters
+      as defined in the attribute schema
+    - Time series (availability profiles, load profiles, marginal costs, snapshot weightings)
+    - Scenarios (network level dimension for stochastic programming, adding a scenario
+      axis to the full component data)
+    - Investment periods (network level dimension for multi-period planning, with
+      per-period weightings, discount rates, and lifetimes)
+    - Energy carriers and CO2 emissions, global constraints (e.g. CO2 budgets)
+    - Standard type libraries for lines and transformers
+    - Geographic coordinates and shapes for spatial analysis
 
   conceptual_structure: |
-    <Is it component-based, bus-based, graph-based, relational,
-    entity-relationship, hierarchical objects, etc.?>
+    Component based with bus centric topology:
+    - Components (Generators, Loads, Stores, ..)
+    - Buses form the nodes of a graph, branches (Lines, Transformers,
+      Links, Processes) form the edges
+    - Components can be abstract: energy assets can be composed from groups of 
+      components (e.g. a hydrogen storage could be modelled with 2 Links for
+      electrolyser and fuel cell, 1 Store and 1 Bus connecting them)
+    Simple tabular format:
+    - Network topology information as well as n-dimensions are underlyingly stored in a 
+      tabular format
+    - Split into static (components × attributes) and dynamic
+      (snapshots × components) tables, extended with multi-indexing
+      for scenarios and investment periods
+    - Each attribute can be static or dynamic, avoiding forced time
+      series when a constant suffices. This is currently being expanded with a
+      segment dimension for piecewise linear cost curves.
 
 # ---------------------------------------------------------------------------
 # 3. Key Design Decisions
 # ---------------------------------------------------------------------------
 design:
   key_decisions:
-    - decision: <What did you decide?>
-      rationale: <Why?>
-    - decision: <...>
-      rationale: <...>
+    - decision: Tabular format
+      rationale: Easiest for users to work with and closest to the input data form
+    - decision: Pandas based storage
+      rationale: Easiest to learn and most users already know pandas
+    - decision: Static and dynamic attribute split
+      rationale: >
+        Avoids forcing time series when a constant suffices, simple access to the most 
+        important data without handling of n dimensions
+    - decision: Multiple accessors via PyPSA API
+      rationale: >
+        Component classes provide filtering, statistics, optimization helpers, etc.
+        on top of the raw tabular data. Additional accessors let users
+        switch between pandas, n-dimensional, and aggregated views without
+        data duplication.
+    - decision: Full backwards compatibility
+      rationale: Large established user base depends on stable interfaces
+    - decision: Components organised per type, not per entity
+      rationale: Natural fit for tabular storage and vectorised operations
+    - decision: Bus-based network topology with abstract components
+      rationale: >
+        Components are fundamental building blocks that can be composed
+        in a variety of ways to represent energy assets
 
   schema_format: |
-    <e.g., Pydantic models, Julia structs, JSON Schema, Protocol Buffers,
-    XML, CIM, custom DSL, other?>
+    Simple CSV tables and runtime checks. We are currently migrating this to Pydantic 
+    and Pandera for stricter validation.
 
   implementation_languages:
-    - <e.g., Python>
-    - <e.g., Julia>
+    - Python
 
-  database_storage_backend: <e.g., PostgreSQL, file-based, in-memory only, ~>
+  database_storage_backend: |
+    - NetCDF
+    - HDF5
+    - CSV folders
+    - Excel
+    - DuckDB (coming soon)
+    - parquet (coming soon)
 
   interoperability:
     imports_from:
-      - <e.g., reads OpenDSS files>
-      - <e.g., reads CIM XML>
+      - All formats above
+      - pandapower
+      - pypower
     exports_to:
-      - <e.g., exports to PowerSystems.jl>
-      - <e.g., exports CIM XML>
+      - All formats above
 
-  data_tool_relation: <Data only | Some tool specific | Tightly coupled>
+  data_tool_relation: Tightly coupled
 
   extensibility: |
-    <How is the schema extended? e.g., plugin system, subclassing,
-    open-ended fields, config-driven, fork-and-modify?>
+    - Custom attributes on any component type can be set
+    - Any custom constraints can be defined via the API
+    - Components are fundamental building blocks that can be composed to represent a wide range of energy assets.
 
   units_handling: |
-    <How are units handled? e.g., implicit SI, explicit per-field,
-    unit conversion library, embedded in field names?>
+    Units are documented per attribute but not enforced at runtime. No
+    unit conversion library is used. 
 
   validation_approach: |
-    <What does validation cover? e.g., schema structure only, range checks,
-    cross-field validation, physical consistency checks (e.g., convexity)?>
-
+    With current overhaul while migrating to Pydantic and Pandera: schema structure,
+    types, range checks, settings and cross-field validation as well as network 
+    topology. If the user can provide it, PyPSA can support it. Otherwise it should fail.
+    
   governance: |
-    <Who decides what to include and when to accept changes? e.g., single
-    maintainer, core team with RFC process, community PRs with review?>
+    Core team of maintainers at TU Berlin and Open Energy Transition with community 
+    contributions via GitHub. Conflicts between maintainers are resolved with simple 
+    majority vote.
 
 # ---------------------------------------------------------------------------
 # 4. Real-World Usage
 # ---------------------------------------------------------------------------
 usage:
   tools_built_on_schema:
-    - tool: <e.g., PowerSimulations.jl>
-      relationship: <e.g., Uses schema as standard input format>
-      link: <https://github.com/...>
-
+    - tool: See https://docs.pypsa.org/latest/home/models/
+    
   largest_real_world_dataset: |
-    <Describe the most complex real-world dataset successfully represented
-    in your schema — system size, model type, data source, what was tested.>
+    PyPSA-Eur: sector-coupled capacity expansion and dispatch model of the
+    full ENTSO-E area (~35 countries). Raw network has ~5,300 buses,
+    ~6,600 HVAC lines and 46 HVDC links, typically clustered to
+    50–250 nodes. Hourly resolution, multi-period pathway optimisation.
+    Data from OpenStreetMap (grid), ERA5/SARAH-3 (renewables), ENTSO-E
+    (demand), Danish Energy Agency (costs).
+    PyPSA-Earth extends geographic coverage globally with workflows available
+    for nearly every country on Earth.
 
   who_is_using_it:
-    - <e.g., "NREL for ReEDS-to-Sienna production cost studies">
-    - <...>
+    - We lost track of that. For known users, see https://docs.pypsa.org/latest/home/users/
 
   data_available:
-    - geographic_area: <e.g., US Western Interconnect>
+    - geographic_area: International
       content: |
-        <e.g., power flow only, investment cost data, unit commitment
-        constraints on generators, load profiles only, etc.>
-      access: <public | ceii_or_nda | licensed | proprietary>
+        We lost track of that. There are many different PyPSA based model implementations
+        for many different regions across the world. Many are public, but there are also
+        many private and proprietary ones we know of, but don't have access to.
+        The link above lists the biggest public ones.
+      access: public, licensed, and proprietary
 
 # ---------------------------------------------------------------------------
 # 5. Limitations & Challenges
 # ---------------------------------------------------------------------------
 challenges:
   known_limitations:
-    - <e.g., "No native support for sector coupling / multi-carrier">
-    - <...>
+    - The tabular format is not the most natural fit for holding network topology data.
+      This is lifted with strict validation and convenience functions / accessors.
+    - Strict backwards compatibility constrains the pace of schema evolution.
 
   hardest_problems_encountered: |
-    <What has been the most difficult technical challenge in developing
-    or using this data schema? What did you learn?>
+    PyPSA is a toolbox used for many different use cases, we sometimes
+    don't even know all the ways it is applied. Maintaining full backwards
+    compatibility while extending the schema and validation is challenging,
+    but has been strictly followed since the release of v1.0.
 
 # ---------------------------------------------------------------------------
 # 6. Interoperability & Convergence
 # ---------------------------------------------------------------------------
 interoperability:
   areas_of_overlap_with_other_schemas: |
-    <If you're familiar with any of the other data schemas in this comparison,
-    note specific areas where your approaches overlap or diverge.>
+    ~
 
   what_would_convergence_require: |
-    <What would it take for you to align with or contribute to other data schemas if an
-    interoperability-focused tool like a translator adopted a data schema as its core schema layer?
-    What from your approach should still be incorporated?>
-
+    The PyPSA data model is very much integrated and used for a variety of workflows,
+    models and applications by many users. We want to provide full backwards
+    compatibility for all of those users. There is also a lot of functionality already
+    based on PyPSA. Either integrated into the framework (like clustering functionality
+    or statistics/ plotting module, which can be plugged into dashboards and GUI
+    applications without much further work) or in external tools created by the
+    community.
+    Support for any interoperability focused tool or any other tool in general, can most
+    likely therefore only be incorporated via translators.
+    
   biggest_thing_others_should_know: |
     <What is the single most important thing — positive or cautionary —
     that others should understand about your data schema?>
@@ -165,6 +275,6 @@ interoperability:
 # Metadata
 # ---------------------------------------------------------------------------
 card_metadata:
-  prepared_by: <Name>
-  date: <YYYY-MM-DD>
+  prepared_by: Lukas Trippe
+  date: "2026-03-11"
   info_sheet_version: "1.0"
