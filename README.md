@@ -17,7 +17,7 @@ Once collected, these sheets will be used for cross-tool comparison at the upcom
 | Grid Data Model | [`data_schemas/grid_data_model.yaml`](data_schemas/grid_data_model.yaml) |
 | CommonEnergySystemModel | [`data_schemas/common_energy_system_model.yaml`](data_schemas/common_energy_system_model.yaml) |
 | PyPSA Data Model | [`data_schemas/pypsa_data_model.yaml`](data_schemas/pypsa_data_model.yaml) |
-| Encoord Data Model | [`data_schemas/encoord_data_model.yaml`](data_schemas/encoord_data_model.yaml) |
+| SAInt Data Model | [`data_schemas/saint_data_model.yaml`](data_schemas/saint_data_model.yaml) |
 | CIM/ENTSO-E | [`data_schemas/cim_entso_e.yaml`](data_schemas/cim_entso_e.yaml) |
 
 ---
