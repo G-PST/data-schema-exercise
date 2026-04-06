@@ -4,3 +4,9 @@ __pycache__/
 .idea/
 .vscode/
 .pixi/
+*.pptx
+analysis/slidev/generate-pptx.js
+analysis/slidev/node_modules/
+analysis/slidev/dist/
+.DS_Store
+.github/slidev-to-pptx.skill

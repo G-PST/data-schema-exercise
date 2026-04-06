@@ -12,10 +12,10 @@ mdc: true
 
 # Comparing Data Schema Across Common Grid Planning Models
 
-A comparison comparison of six power system data schemas
+A comparative analysis of six power system data schemas
 
 <div class="abs-b mb-8 text-sm opacity-60">
-Based on schema submissions to the G-PST data-schema-exercise repository for the Workshop on Data Schema Approaches for Grid Planning Model Interoperability.
+G-PST Workshop on Data Schema Approaches for Grid Planning Model Interoperability
 </div>
 
 ---
@@ -23,33 +23,255 @@ layout: two-cols
 layoutClass: gap-4
 ---
 
-# Schemas Compared
+# Six Schemas Compared
 
-Six organizations submitted filled schema cards describing their data models for power system modeling.
+<div class="text-sm">
 
+| Schema | Organization | Type |
+|--------|-------------|------|
+| **CIM** | ENTSO-E | Exchange standard |
+| **CESM** | G-PST | Interchange hub |
+| **GenX** | Princeton / MIT | Planning tool |
+| **GDM** | NREL | Distribution data |
+| **PyPSA** | TU Berlin | Modeling framework |
+| **SAInt** | encoord | Integrated platform |
 
-- **CIM** — ENTSO-E
-- **CESM** — G-PST
-- **GenX** — Princeton / MIT
-- **GDM** — NREL
-- **PyPSA** — TU Berlin
-- **SAInt** — encoord
-
+</div>
 
 ::right::
 
-<div class="mt-12">
+<div class="mt-8 text-sm">
 
-| Schema | Maturity | License |
-|--------|----------|---------|
-| CIM | Production | Apache-2.0 |
-| CESM | v0.1.0 | TBD |
-| GenX | Production | GPL-2.0 |
-| GDM | Active dev | BSD-3 |
-| PyPSA | Production | MIT |
-| SAInt | Production | Proprietary |
+### Key question
+
+These schemas range from **pure data specifications** to **code implementations** — where does each sit, and what does that mean for interoperability?
+
+<div class="mt-4 text-xs text-gray-500">
+Each tool owner filled out a YAML schema card describing data model, design decisions, usage, and interoperability posture.
+</div>
 
 </div>
+
+---
+
+# The Data Specification → Code Implementation Spectrum
+
+<div class="mt-2 text-xs text-center text-gray-500 mb-4">
+Schemas range from pure data specifications (left) to code implementations (right). Each has a documentation/specification layer and a code/validation layer.
+</div>
+
+<div class="relative mt-4" style="height: 320px;">
+  <!-- Spectrum arrow -->
+  <div class="absolute bottom-2 left-4 right-4 flex items-center">
+    <div class="flex-1 h-0.5 bg-gray-400"></div>
+    <div class="text-gray-400 text-lg ml-1">→</div>
+  </div>
+  <div class="absolute bottom-[-16px] left-4 text-sm font-bold text-gray-600">Data Specification</div>
+  <div class="absolute bottom-[-16px] right-4 text-sm font-bold text-gray-600 text-right">Code Implementation</div>
+
+  <!-- CIM -->
+  <div class="absolute left-[2%] top-0 w-[14%]">
+    <div class="text-center text-xs font-bold text-gray-600 mb-1">CIM</div>
+    <div class="bg-amber-100 border border-amber-300 rounded p-1 text-[9px] text-center mb-1">Enterprise Exchange Standard</div>
+    <div class="bg-blue-100 border border-blue-300 rounded p-1 text-[9px] text-center">RDFS + SHACL</div>
+  </div>
+
+  <!-- SAInt -->
+  <div class="absolute left-[20%] top-0 w-[16%]">
+    <div class="text-center text-xs font-bold text-gray-600 mb-1">SAInt</div>
+    <div class="bg-amber-100 border border-amber-300 rounded p-1 text-[9px] text-center mb-1">Network + Scenario + Solution proprietary format</div>
+    <div class="bg-gray-100 border border-gray-300 rounded p-1 text-[9px] text-center">Web documentation</div>
+  </div>
+
+  <!-- CESM -->
+  <div class="absolute left-[40%] top-0 w-[14%]">
+    <div class="text-center text-xs font-bold text-gray-600 mb-1">CESM</div>
+    <div class="bg-amber-100 border border-amber-300 rounded p-1 text-[9px] text-center mb-1">Declarative namespaced LinkML schema</div>
+    <div class="bg-blue-100 border border-blue-300 rounded p-1 text-[9px] text-center">YAML file + Python validation</div>
+  </div>
+
+  <!-- PyPSA -->
+  <div class="absolute left-[58%] top-0 w-[14%]">
+    <div class="text-center text-xs font-bold text-gray-600 mb-1">PyPSA</div>
+    <div class="bg-amber-100 border border-amber-300 rounded p-1 text-[9px] text-center mb-1">Comprehensive component attribute schema in CSV files</div>
+    <div class="bg-blue-100 border border-blue-300 rounded p-1 text-[9px] text-center">CSV files + Python validation</div>
+  </div>
+
+  <!-- GenX -->
+  <div class="absolute left-[74%] top-0 w-[12%]">
+    <div class="text-center text-xs font-bold text-gray-600 mb-1">GenX</div>
+    <div class="bg-blue-100 border border-blue-300 rounded p-1 text-[9px] text-center mb-1">Julia developer ready schema (Validation for structs, optimization constraints compatible)</div>
+    <div class="bg-blue-100 border border-blue-300 rounded p-1 text-[9px] text-center">Julia data structures + Julia validation</div>
+  </div>
+
+  <!-- GDM -->
+  <div class="absolute left-[88%] top-0 w-[11%]">
+    <div class="text-center text-xs font-bold text-gray-600 mb-1">GDM</div>
+    <div class="bg-blue-100 border border-blue-300 rounded p-1 text-[9px] text-center mb-1">Python developer friendly schema (Pydantic, units, JSON serialization)</div>
+    <div class="bg-blue-100 border border-blue-300 rounded p-1 text-[9px] text-center">Python data structures + Python validation</div>
+  </div>
+</div>
+
+<div class="mt-2 text-xs text-gray-500">
+<span class="inline-block w-3 h-3 bg-amber-100 border border-amber-300 rounded mr-1 align-middle"></span> Data specification layer &nbsp;&nbsp;
+<span class="inline-block w-3 h-3 bg-blue-100 border border-blue-300 rounded mr-1 align-middle"></span> Code / validation layer
+</div>
+
+---
+
+# Key Observations from the Comparison
+
+<div class="grid grid-cols-2 gap-5 mt-2">
+
+<div class="border-l-4 border-blue-500 pl-3">
+<h3 class="text-blue-800 font-bold text-base mb-1">1. These schemas serve different problems</h3>
+<p class="text-sm">Exchange (CIM), tool-neutral interchange (CESM), planning optimization (GenX, PyPSA), distribution analysis (GDM), and integrated multi-energy modeling (SAInt) — they overlap but don't duplicate.</p>
+</div>
+
+<div class="border-l-4 border-green-500 pl-3">
+<h3 class="text-green-800 font-bold text-base mb-1">2. Tool coupling varies dramatically</h3>
+<p class="text-sm">CIM and CESM exist independently of any tool. GenX and PyPSA are inseparable from their solvers. This has major implications for how a future common schema could relate to each.</p>
+</div>
+
+<div class="border-l-4 border-purple-500 pl-3">
+<h3 class="text-purple-800 font-bold text-base mb-1">3. Identity and naming differ everywhere</h3>
+<p class="text-sm">CIM uses persistent UUIDs, PyPSA uses string names, GenX uses integer zone IDs. A common schema would need to reconcile fundamentally different identification strategies.</p>
+</div>
+
+<div class="border-l-4 border-orange-500 pl-3">
+<h3 class="text-orange-800 font-bold text-base mb-1">4. Validation approaches range from minimal to deep</h3>
+<p class="text-sm">GDM enforces cross-object rules at creation time. CIM uses declarative SHACL. GenX checks file/column existence. PyPSA is migrating to Pydantic. Every team is investing in stricter validation independently.</p>
+</div>
+
+</div>
+
+---
+
+# What a Toy Problem Reveals
+
+<div class="text-sm">
+
+We represented a simple **2-bus test system** (generator + transformer + line) in all six schemas.
+
+</div>
+
+<div class="grid grid-cols-[1fr_2fr] gap-6 mt-2">
+
+<div class="flex items-center">
+
+<div class="bg-gray-50 border rounded p-4">
+  <div class="flex items-center justify-center gap-0">
+    <div class="flex flex-col items-center">
+      <div class="border-2 border-gray-700 rounded px-3 py-2 text-center text-xs font-bold bg-white">
+        Bus 1<br><span class="font-normal text-gray-600">(230kV)</span>
+      </div>
+      <div class="h-4 border-l-2 border-gray-700"></div>
+      <div class="text-xs text-center font-semibold">Generator<br><span class="font-normal text-gray-600">(100 MW Gas)</span></div>
+    </div>
+    <div class="flex items-start mt-3">
+      <div class="w-8 border-t-2 border-gray-700 mt-3"></div>
+      <div class="text-xs font-semibold px-1 mt-1">Line</div>
+      <div class="w-8 border-t-2 border-gray-700 mt-3"></div>
+    </div>
+    <div class="flex flex-col items-center">
+      <div class="border-2 border-gray-700 rounded px-3 py-2 text-center text-xs font-bold bg-white">
+        Bus 2<br><span class="font-normal text-gray-600">(13.8kV)</span>
+      </div>
+      <div class="h-4 border-l-2 border-gray-700"></div>
+      <div class="text-xs text-center font-semibold">Transformer<br><span class="font-normal text-gray-600">(230/13.8 kV)</span></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="text-sm space-y-2">
+
+**What we learned:**
+
+- **Translation is lossy in both directions.** CIM→GenX loses electrical params; GenX→CIM loses cost data. A common schema must be a *superset*, not intersection.
+- **The real challenge is semantics, not syntax.** Is SAInt's `FGEN` the same as GenX's `Thermal`? Edge cases matter enormously.
+- **Abstraction levels differ by design.** GenX is zonal (no buses), CESM is energy-flow (no impedance), GDM models phases no one else does.
+
+</div>
+
+</div>
+
+---
+
+# Implications for a Common Data Schema
+
+<div class="grid grid-cols-2 gap-4 mt-2">
+
+<div>
+
+### What the differences tell us
+
+<div class="text-sm space-y-2">
+
+**Schemas span different abstraction levels** — GenX is zonal (no buses), CESM is energy-flow (no impedance), GDM models phase detail no one else carries. A common schema would need to accommodate all of these.
+
+**Translation between schemas is lossy** — CIM→GenX loses electrical parameters, GenX→CIM loses cost data. Any interoperability layer would need to be a superset, not an intersection.
+
+**Tool-coupled schemas can't easily change** — GenX and PyPSA say their data models are inseparable from solver logic. Interoperability would likely need to work through translators.
+
+**Multi-energy coverage is uneven** — CESM, SAInt, PyPSA handle multiple carriers. CIM, GDM, GenX are single-domain. Sector coupling is an emerging dividing line.
+
+</div>
+
+</div>
+
+<div>
+
+### Open questions for discussion
+
+<div class="border-2 border-gray-200 rounded p-2 mb-2">
+<p class="text-sm">How do you bridge the gap between <strong>exchange-oriented</strong> schemas (CIM, CESM) and <strong>tool-coupled</strong> schemas (GenX, PyPSA)?</p>
+</div>
+
+<div class="border-2 border-gray-200 rounded p-2 mb-2">
+<p class="text-sm">What level of <strong>abstraction</strong> should a common schema target — bus-level detail, zonal, or energy-flow?</p>
+</div>
+
+<div class="border-2 border-gray-200 rounded p-2 mb-2">
+<p class="text-sm">Can <strong>identity and naming</strong> be reconciled across fundamentally different approaches (UUIDs vs. string names vs. zone IDs)?</p>
+</div>
+
+<div class="border-2 border-gray-200 rounded p-2">
+<p class="text-sm">Is there value in a <strong>shared validation layer</strong> even if format unification isn't feasible?</p>
+</div>
+
+</div>
+
+</div>
+
+---
+layout: center
+class: text-center
+---
+
+# Thank You
+
+<div class="text-lg mt-4 opacity-70">
+
+G-PST Data Schema Comparative Analysis
+
+Source data: G-PST/data-schema-exercise
+
+</div>
+
+<div class="mt-8 text-sm opacity-50">
+Supplemental slides follow →
+</div>
+
+---
+layout: section
+---
+
+# Appendix
+## Supplemental Slides
+
+Detailed comparison material for reference
 
 ---
 
@@ -391,38 +613,38 @@ Each schema combines multiple patterns. CIM is unique in its profile-based parti
 
 ---
 
-# What Would Convergence Require?
+# Each Schema's Interoperability Posture
 
 <div class="grid grid-cols-2 gap-3 text-xs">
 
 <div class="border rounded p-3 bg-blue-50">
 <h4 class="text-blue-800 font-bold mb-1">CIM</h4>
-Agreement on canonical identity management, topology semantics, equipment parameters, and profile boundaries. Any common layer must preserve stable identifiers, profile modularity, explicit semantics, and machine-checkable validation.
+Relies on stable identifiers (mRID), profile modularity, explicit semantics, and machine-checkable validation (SHACL). Any interoperability layer would need to preserve these properties.
 </div>
 
 <div class="border rounded p-3 bg-green-50">
 <h4 class="text-green-800 font-bold mb-1">CESM</h4>
-CESM's hub-and-spoke is designed for this — convergence mainly requires agreeing on common entity naming/taxonomy and ensuring core concepts map cleanly. Explicit methods and single-definition-per-concept principles should be considered.
+Designed as a hub-and-spoke interchange layer with explicit methods and a single-definition-per-concept principle. Already includes translators for GenX and PyPSA.
 </div>
 
 <div class="border rounded p-3 bg-purple-50">
 <h4 class="text-purple-800 font-bold mb-1">GenX</h4>
-A common resource type taxonomy and attribute naming convention. Standardized time series formats. Agreement on unit conventions. GenX's flexible dictionary model could adapt via translation wrappers.
+Flexible dictionary-backed model could adapt via translation wrappers. Key gaps: no formal schema definition language, unit conventions are implicit in field names.
 </div>
 
 <div class="border rounded p-3 bg-orange-50">
 <h4 class="text-orange-800 font-bold mb-1">GDM</h4>
-Mapping GDM's distribution hierarchy to a broader schema without losing cross-object validation depth. Pint-based units and Pydantic type safety should be preserved in any common layer.
+Distribution-specific hierarchy with deep cross-object validation. Pint-based units and Pydantic type safety are strengths, but the scope is narrower than other schemas.
 </div>
 
 <div class="border rounded p-3 bg-red-50">
 <h4 class="text-red-800 font-bold mb-1">PyPSA</h4>
-Full backward compatibility must be maintained for existing users. Interoperability can most likely only be incorporated via translators — the data model is too integrated with the tool to change fundamentally.
+Data model is deeply integrated with the tool. Full backward compatibility must be maintained. Interoperability would most likely need to work through translators rather than schema changes.
 </div>
 
 <div class="border rounded p-3 bg-teal-50">
 <h4 class="text-teal-800 font-bold mb-1">SAInt</h4>
-A software-agnostic schema representing time-series scenario analysis across capacity expansion, production cost, AC power flow, and dynamic domains. Explicit translation contracts between a common layer and each tool.
+Vendor-controlled schema with a single network shared across all analysis types. Already separates physical structure from simulation parameters — a pattern relevant to interoperability.
 </div>
 
 </div>
@@ -466,57 +688,6 @@ A software-agnostic schema representing time-series scenario analysis across cap
 </div>
 
 ---
-
-# Five Themes for Convergence
-
-<v-clicks>
-
-### 1. Nobody wants one schema to rule them all
-Every submission assumes translators/converters rather than replacement. The question is whether to converge on a hub (CESM's approach), a vocabulary (CIM's approach), or just mapping contracts.
-
-### 2. Identity and naming are the hardest prerequisites
-CIM's persistent mRID, CESM's explicit typing, SAInt's naming challenges — everyone agrees that agreeing on what things are called and how they're identified is the unglamorous prerequisite everything else depends on.
-
-### 3. Validation approaches vary wildly — but all want more
-From SHACL (CIM) to Pydantic (GDM) to "being overhauled" (PyPSA) — every team is investing in stricter validation. A shared validation layer could be common ground.
-
-### 4. The tool-coupled schemas face the hardest convergence path
-GenX and PyPSA are deeply integrated with their solvers. Both say convergence must come through translators, not schema changes. The tool-neutral schemas (CIM, CESM) have more flexibility to adapt.
-
-### 5. Multi-energy is the emerging frontier
-CESM, SAInt, and PyPSA already handle multiple energy carriers. CIM is transmission-focused, GDM is distribution-only, GenX is electricity-only. Sector coupling may drive convergence.
-
-</v-clicks>
-
----
-
-# Possible Convergence Pathways
-
-<div class="grid grid-cols-2 gap-6 mt-4">
-
-<div class="border-2 border-blue-300 rounded-xl p-4">
-<h3 class="text-blue-700 font-bold mb-2">1. Hub-and-spoke interchange</h3>
-<p class="text-sm">CESM's approach: define a common interchange schema + bidirectional translators for each tool. Avoids N² point-to-point converters.</p>
-</div>
-
-<div class="border-2 border-green-300 rounded-xl p-4">
-<h3 class="text-green-700 font-bold mb-2">2. Common vocabulary / taxonomy</h3>
-<p class="text-sm">CIM's approach: agree on what things are called and what they mean, with machine-readable semantics. Tools keep internal models but speak a shared language.</p>
-</div>
-
-<div class="border-2 border-purple-300 rounded-xl p-4">
-<h3 class="text-purple-700 font-bold mb-2">3. Layered convergence</h3>
-<p class="text-sm">Start with the domains where schemas already overlap (transmission topology, generator parameters, time series). Expand outward to contested territory (distribution, multi-energy, dynamics).</p>
-</div>
-
-<div class="border-2 border-orange-300 rounded-xl p-4">
-<h3 class="text-orange-700 font-bold mb-2">4. Shared validation service</h3>
-<p class="text-sm">Build a common validation layer that any schema can use — independent of format. If everyone is investing in stricter validation anyway, pool the effort.</p>
-</div>
-
-</div>
-
----
 layout: section
 ---
 
@@ -532,10 +703,10 @@ A simple 2-bus test system with a generator, transformer, and line — represent
 <div class="mt-4">
 
 ```
-  ┌─────────────┐         ┌─────────────┐
+  ┌─────────────-┐          ┌─────────────-┐
   │   Bus 1      │── Line ──│   Bus 2      │
-  │  (HV 230kV)  │         │  (LV 13.8kV) │
-  └──────┬───────┘         └──────┬───────┘
+  │  (HV 230kV)  │          │  (LV 13.8kV) │
+  └──────┬───────┘          └──────┬───────┘
          │                        │
     Generator               Transformer
    (100 MW Gas)            (230/13.8 kV)
@@ -1008,18 +1179,3 @@ All six can represent "a thing connected to a bus." The hard part is agreeing wh
 GDM's cross-object validation ("3φ load on 3φ bus") and CIM's SHACL conformance testing reflect decades of experience with real-world data quality problems. Newer schemas will likely evolve toward similar strictness.
 
 </v-clicks>
-
----
-layout: center
-class: text-center
----
-
-# Thank You
-
-<div class="text-lg mt-4 opacity-70">
-
-Analysis by Claude AI
-
-Source data: G-PST/data-schema-exercise
-
-</div>

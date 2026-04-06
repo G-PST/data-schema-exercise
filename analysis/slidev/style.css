@@ -63,3 +63,21 @@ tr:nth-child(even) {
   color: white !important;
   border-bottom: none;
 }
+
+/* Fix overflow: reduce font size for specific slides */
+.slidev-page-12, .slidev-page-16, .slidev-page-19, .slidev-page-24, .slidev-page-25, .slidev-page-27 {
+  font-size: 0.85rem !important;
+}
+
+/* Slide 20: reduce table font size and padding to fit more horizontally */
+.slidev-page-20 table {
+  font-size: 0.7rem !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.slidev-page-20 th, .slidev-page-20 td {
+  padding: 0.2rem 0.3rem !important;
+}
+.slidev-page-20 .overflow-x-auto {
+  overflow-x: visible !important;
+}
