@@ -20,151 +20,220 @@
 # ---------------------------------------------------------------------------
 identity:
   schema_name: CIM/ENTSO-E
-  organization: <e.g., NREL>
+  organization: ENTSO-E
   maintainers:
-    - name: <Full Name>
-      affiliation: <Org Name>
-      github: <@handle>
-      email: <email>
-  repository: <https://github.com/...>
-  documentation: <https://...>
-  license: <e.g., BSD-3-Clause>
-  version: <e.g., v2.1.0 or "pre-release">
-  maturity: <Prototype | Active Development | Stable | Production>
+    - name: Eduardo Relaño Algaba
+      affiliation: ENTSO-E
+      github: https://github.com/EduardoRelAlg
+      email: cim@entsoe.eu
+  repository: https://github.com/entsoe/application-profiles-library
+  documentation: https://www.entsoe.eu/data/cim/cim-for-grid-models-exchange/
+  license: Apache-2.0
+  version: v1.1.1
+  maturity: Production
 
   # Point us to the code — we'll review the technical details ourselves
-  link_to_schema_definition: <https://github.com/.../src/models/>
-  link_to_validation_logic: <https://github.com/.../src/validators/>
-  link_to_timeseries_management: <https://github.com/.../src/timeseries/>
-  link_to_entity_relation_diagram: <https://... or ~ if not published>
+  link_to_schema_definition: https://github.com/entsoe/application-profiles-library/tree/main/CGMES/CurrentRelease/RDFS
+  link_to_validation_logic: https://github.com/entsoe/application-profiles-library/tree/main/CGMES/CurrentRelease/SHACL
+  link_to_timeseries_management: https://github.com/entsoe/application-profiles-library/blob/main/NCP/CurrentRelease/RDFS/PowerSchedule-AP-Voc-RDFS2020.rdf
+  link_to_entity_relation_diagram: https://www.entsoe.eu/Documents/CIM_documents/Grid_Model_CIM/CIM17-2_CGMES31v01_PROF-20v02_NC24v18_MS10v03_DES10v01_64bit.zip
 
 # ---------------------------------------------------------------------------
 # 2. What It Is & What It Covers
 # ---------------------------------------------------------------------------
 summary:
   description: |
-    <A paragraph describing what this data schema is, what problem it solves,
-    and who the intended users are.>
+    CIM/ENTSO-E refers to the ENTSO-E profile-based application of IEC CIM for
+    cross-tool and cross-organization exchange of power-system models in Europe.
+    In practice this is centered on CGMES and related ENTSO-E profile sets,
+    published as machine-readable vocabulary schemas (RDFS) and validation
+    constraints (SHACL). The schema solves the interoperability problem between
+    TSOs, RCCs, and software vendors by defining a common semantic model and
+    profile-specific exchange structure for grid model data used in system
+    development and system operation.
 
   modeling_domains_supported: |
-    <What modeling domains does this data schema support? e.g., capacity expansion
-    (zonal), production cost (nodal), bulk power flow, dynamics, distribution,
-    multi-energy/sector coupling, etc.>
+    Bulk transmission-grid modeling and exchange, including equipment,
+    topology/connectivity, steady-state hypotheses, solved state variables,
+    short-circuit and dynamic studies, diagram/geographical information, and
+    related operational/system-development exchanges around common grid models.
+    Via ENTSO-E network-code-related profiles, it also supports adjacent process
+    data such as schedules and other regional coordination exchanges.
 
   what_does_it_NOT_cover: |
-    <Equally important — what is explicitly out of scope?>
+    It is not a market-optimization schema, not a simulation-results database
+    design, and not a tool-internal runtime model. It does not prescribe solver
+    algorithms, UI concepts, storage engines, or vendor-specific application
+    behavior. It is also not primarily a low-voltage/distribution digital twin
+    schema, although parts of CIM are broader than the ENTSO-E CGMES focus.
 
   data_captured: |
-    <What types of information? e.g., grid topology, device parameters,
-    time series, investment costs, operating constraints, etc.>
+    Grid assets and their electrical parameters, connectivity/topology,
+    terminals and containers, operational limits, state variables, steady-state
+    input assumptions, model metadata, boundaries/reference data, geographical
+    and diagram information, and selected process/time-dependent exchanges via
+    ENTSO-E network-code profiles.
 
   conceptual_structure: |
-    <Is it component-based, bus-based, graph-based, relational,
-    entity-relationship, hierarchical objects, etc.?>
+    Profile-based, object-oriented semantic information model derived from IEC
+    CIM UML and published as graph-shaped RDF vocabularies plus SHACL
+    constraints. Exchange datasets are typically partitioned by profile (e.g.
+    EQ, TP, SSH, SV, DY, DL, GL) and linked through persistent identifiers.
 
 # ---------------------------------------------------------------------------
 # 3. Key Design Decisions
 # ---------------------------------------------------------------------------
 design:
   key_decisions:
-    - decision: <What did you decide?>
-      rationale: <Why?>
-    - decision: <...>
-      rationale: <...>
+    - decision: Use IEC CIM as the base information model and define ENTSO-E-specific exchange profiles on top.
+      rationale: Reuse of an international standard maximizes interoperability while allowing ENTSO-E-specific business requirements to be expressed in a controlled way.
+    - decision: Split exchange content into profile-specific datasets (e.g. EQ, TP, SSH, SV, DL, GL, DY).
+      rationale: Modular profile separation supports clearer exchange contracts, staged processing, and conformance testing for different business scenarios.
+    - decision: Publish machine-readable schema and validation artifacts as RDFS and SHACL.
+      rationale: This makes semantics and constraints explicit, tool-consumable, and easier to test across vendors.
+    - decision: Rely on persistent mRID-based identity across model exchanges.
+      rationale: Stable identifiers are essential for boundary matching, model merging, version comparison, and time-series/process continuity.
+    - decision: Keep the artifacts tool-neutral and publicly versioned in an open repository.
+      rationale: Transparency, reproducibility, and shared implementation guidance improve ecosystem convergence.
 
   schema_format: |
-    <e.g., Pydantic models, Julia structs, JSON Schema, Protocol Buffers,
-    XML, CIM, custom DSL, other?>
+    IEC CIM / ENTSO-E application profiles defined from UML and published as
+    machine-readable RDFS vocabularies and SHACL constraints; exchange instances
+    are typically serialized as CIM/XML using RDF/XML-based conventions.
 
   implementation_languages:
-    - <e.g., Python>
-    - <e.g., Julia>
+    - Language-agnostic schema artifacts (RDFS/SHACL in RDF serializations)
 
-  database_storage_backend: <e.g., PostgreSQL, file-based, in-memory only, ~>
+  database_storage_backend: ~
 
   interoperability:
     imports_from:
-      - <e.g., reads OpenDSS files>
-      - <e.g., reads CIM XML>
-    exports_to:
-      - <e.g., exports to PowerSystems.jl>
-      - <e.g., exports CIM XML>
+      - ~
 
-  data_tool_relation: <Data only | Some tool specific | Tightly coupled>
+    exports_to:
+      - https://pandapower.readthedocs.io/en/latest/converter/cgmes.html
+      - https://powsybl.readthedocs.io/projects/powsybl-core/en/stable/grid_exchange_formats/cgmes/ 
+      - https://github.com/SOPTIM/cgmes2pgm_converter 
+      - https://veragrid.readthedocs.io/en/latest/md_source/data_models.html#cgmes
+      - https://www.entsoe.eu/data/cim/cim-conformity-and-interoperability/#Conformity-Registry
+      
+
+  data_tool_relation: Data only
 
   extensibility: |
-    <How is the schema extended? e.g., plugin system, subclassing,
-    open-ended fields, config-driven, fork-and-modify?>
+    Extensions are typically introduced through new or revised profiles,
+    namespaces, and UML-to-profile generation rather than ad hoc custom fields.
+    ENTSO-E also publishes related profile families beyond core CGMES (e.g. NCP),
+    allowing controlled evolution while preserving interoperability.
 
   units_handling: |
-    <How are units handled? e.g., implicit SI, explicit per-field,
-    unit conversion library, embedded in field names?>
+    Units are primarily governed by CIM semantics and datatypes rather than by
+    informal field naming. Implementations are expected to respect the units and
+    meanings defined by the underlying CIM classes and profile definitions.
 
   validation_approach: |
-    <What does validation cover? e.g., schema structure only, range checks,
-    cross-field validation, physical consistency checks (e.g., convexity)?>
+    Validation includes profile conformance through SHACL constraints together
+    with schema/vocabulary checks from the RDFS artifacts. In practice this
+    covers structural consistency, typing, cardinality, allowed associations,
+    and selected cross-object/profile consistency rules relevant to exchange.
 
   governance: |
-    <Who decides what to include and when to accept changes? e.g., single
-    maintainer, core team with RFC process, community PRs with review?>
+    Governance is led by the ENTSO-E CIM Working Group. Releases are approved by
+    ENTSO-E governance bodies/work groups and published in the ENTSO-E CGMES
+    Library and the public Application Profiles Library repository. Feedback is
+    handled through GitHub issues and the cim@entsoe.eu contact.
 
 # ---------------------------------------------------------------------------
 # 4. Real-World Usage
 # ---------------------------------------------------------------------------
 usage:
   tools_built_on_schema:
-    - tool: <e.g., PowerSimulations.jl>
-      relationship: <e.g., Uses schema as standard input format>
-      link: <https://github.com/...>
+    - tool: CGMES-conformant power-system data management, planning, and operational analysis tools from multiple vendors
+      relationship: Uses the schema as an exchange and interoperability format between organizations and applications
+      link: https://www.entsoe.eu/data/cim/cim-conformity-and-interoperability/
+    - tool: ENTSO-E and TSO/RCC common-grid-model exchange processes
+      relationship: Uses the schema as the baseline model exchange layer for regional and pan-European exchanges
+      link: https://www.entsoe.eu/digital/common-information-model/cim-for-grid-models-exchange/
 
   largest_real_world_dataset: |
-    <Describe the most complex real-world dataset successfully represented
-    in your schema — system size, model type, data source, what was tested.>
+    Pan-European and regional common-grid-model exchanges assembled from
+    multiple individual grid models (IGMs) for transmission-system studies and
+    operational coordination. Exact size depends on the process and scenario,
+    but the intended scope is very large real-world transmission datasets across
+    multiple TSOs rather than small academic test systems.
 
   who_is_using_it:
-    - <e.g., "NREL for ReEDS-to-Sienna production cost studies">
-    - <...>
+    - ENTSO-E and its CIM Working Group
+    - European TSOs participating in common grid model exchanges
+    - RCC-related regional coordination processes that depend on common grid models
+    - Software suppliers implementing CGMES conformity for TSO-facing applications
+    - At least in Germany DSOs also will have to provide their data as CGMES
 
   data_available:
-    - geographic_area: <e.g., US Western Interconnect>
+    - geographic_area: Europe / ENTSO-E area
       content: |
-        <e.g., power flow only, investment cost data, unit commitment
-        constraints on generators, load profiles only, etc.>
-      access: <public | ceii_or_nda | licensed | proprietary>
+        Transmission-grid model exchange data for system development and system
+        operation use cases, including profile-based network models and related
+        ENTSO-E documents/artifacts. Publicly available artifacts mainly include
+        schemas, constraints, documentation, test/conformity material, and some
+        process specifications rather than unrestricted operational model data.
+      access: mixed_public_and_restricted
 
 # ---------------------------------------------------------------------------
 # 5. Limitations & Challenges
 # ---------------------------------------------------------------------------
 challenges:
   known_limitations:
-    - <e.g., "No native support for sector coupling / multi-carrier">
-    - <...>
+    - Exchange semantics are rich, but implementation is non-trivial and requires careful profile handling across multiple datasets.
+    - Interoperability depends not only on schema syntax but also on consistent interpretation of identifiers, boundaries, and profile semantics.
+    - Real-world process requirements evolve faster than formal standardization, creating pressure for extensions, guidance, and clarifications.
+    - The schema is intentionally exchange-oriented, so tool-internal optimization or solver-specific information may need separate representations.
 
   hardest_problems_encountered: |
-    <What has been the most difficult technical challenge in developing
-    or using this data schema? What did you learn?>
+    The hardest problem is not defining isolated classes, but achieving stable
+    interoperability across organizations, processes, and software products.
+    In practice that means aligning UML, profile derivation, serialization,
+    identifiers, validation rules, and business-process expectations. A key
+    lesson is that machine-readable constraints and open conformance processes
+    are essential; narrative specifications alone are not enough.
+
+    CIM/CGMES is based on semantic web standards like RDF, RDFS, SHACL and SPARQL.
+    Knowledge about those has long been a barrier for many power system engineers
+    and software vendors. However, the benefits of explicit semantics, 
+    machine-checkable validation, and open tooling have proven to be worth the 
+    initial learning curve.
 
 # ---------------------------------------------------------------------------
 # 6. Interoperability & Convergence
 # ---------------------------------------------------------------------------
 interoperability:
   areas_of_overlap_with_other_schemas: |
-    <If you're familiar with any of the other data schemas in this comparison,
-    note specific areas where your approaches overlap or diverge.>
+    There is strong overlap with other power-system data schemas wherever they
+    represent network assets, topology, operational constraints, state
+    variables, and time-dependent schedules. The main difference is that
+    CIM/ENTSO-E is primarily an exchange and interoperability schema for
+    multi-party enterprise/process integration, with explicit semantic profiles
+    and conformance governance, rather than a schema designed around one
+    simulation tool or one optimization workflow.
 
   what_would_convergence_require: |
-    <What would it take for you to align with or contribute to other data schemas if an
-    interoperability-focused tool like a translator adopted a data schema as its core schema layer?
-    What from your approach should still be incorporated?>
+    Convergence would require agreement on canonical identity management,
+    topology semantics, equipment parameter semantics, profile boundaries, and a
+    disciplined mapping between exchange-neutral concepts and tool-specific data
+    models. Any common schema layer should preserve stable identifiers,
+    profile-based modularity, explicit semantics, and machine-checkable
+    validation.
 
   biggest_thing_others_should_know: |
-    <What is the single most important thing — positive or cautionary —
-    that others should understand about your data schema?>
+    The most important point is that CIM/ENTSO-E is much more than a file
+    format. Its value lies in shared semantics, profile contracts, persistent
+    identity, and validation/conformity processes that make cross-vendor,
+    cross-organization interoperability operationally feasible at scale.
 
 # ---------------------------------------------------------------------------
 # Metadata
 # ---------------------------------------------------------------------------
 card_metadata:
-  prepared_by: <Name>
-  date: <YYYY-MM-DD>
+  prepared_by: Arne Bernhardt
+  date: 2026-03-06
   info_sheet_version: "1.0"

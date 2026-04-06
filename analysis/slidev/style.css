@@ -1,0 +1,83 @@
+/* G-PST Brand Styles for Slidev */
+
+:root {
+  --slidev-theme-primary: #004E7C;
+  --slidev-theme-accent: #0F4192;
+}
+
+.slidev-layout {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Title slide styling */
+.slidev-page-1 {
+  background: linear-gradient(135deg, #004E7C 0%, #0F4192 100%) !important;
+  color: white !important;
+}
+
+.slidev-page-1 h1 {
+  color: white !important;
+  font-size: 2.5rem !important;
+}
+
+/* Headers */
+h1 {
+  color: #004E7C !important;
+  border-bottom: 2px solid #0F4192;
+  padding-bottom: 0.3rem;
+}
+
+h3 {
+  color: #333;
+}
+
+/* Tables */
+table {
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+th {
+  background-color: #004E7C !important;
+  color: white !important;
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+}
+
+td {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+/* Last slide */
+.slidev-page-18 {
+  background: linear-gradient(135deg, #004E7C 0%, #0F4192 100%) !important;
+  color: white !important;
+}
+
+.slidev-page-18 h1 {
+  color: white !important;
+  border-bottom: none;
+}
+
+/* Fix overflow: reduce font size for specific slides */
+.slidev-page-12, .slidev-page-16, .slidev-page-19, .slidev-page-24, .slidev-page-25, .slidev-page-27 {
+  font-size: 0.85rem !important;
+}
+
+/* Slide 20: reduce table font size and padding to fit more horizontally */
+.slidev-page-20 table {
+  font-size: 0.7rem !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.slidev-page-20 th, .slidev-page-20 td {
+  padding: 0.2rem 0.3rem !important;
+}
+.slidev-page-20 .overflow-x-auto {
+  overflow-x: visible !important;
+}
