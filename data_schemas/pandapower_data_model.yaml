@@ -1,0 +1,446 @@
+# ============================================================================
+# Data Schema Sheet — pandapower Network Data Model
+# ============================================================================
+# Please fill out this sheet to describe your data schema / data model.
+# This will be used for cross-project comparison at the G-PST workshop on
+# power system planning interoperability.
+#
+# Instructions:
+#   - Replace placeholder text (in angle brackets) with your information.
+#   - Use ~ (null) for fields that don't apply.
+#   - Use lists (- item) for multi-value fields. Please add entries as needed.
+#   - Keep descriptions concise but specific.
+#   - You do NOT need to detail things we can find in your repo (CI setup,
+#     library dependencies, serialization formats, etc.). Just point us to
+#     the code and we'll review it.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# 1. Identity
+# ---------------------------------------------------------------------------
+identity:
+  schema_name: pandapower Network Data Model
+  organization: >
+    Fraunhofer Institute for Energy Economics and Energy System Technology (IEE), Kassel,
+    and Department for Sustainable Electrical Energy Systems (e2n), University of Kassel
+  maintainers:
+    - name: Mike Vogt
+      affiliation: Fraunhofer IEE
+      github: https://github.com/vogt31337
+      email: mike.vogt@iee.fraunhofer.de
+    - name: Alexander Scheidler
+      affiliation: Fraunhofer IEE
+      github: ~
+      email: alexander.scheidler@iee.fraunhofer.de
+    - name: pandapower Developers
+      affiliation: e2nIEE community
+      github: ~
+      email: info@pandapower.org
+  repository: https://github.com/e2nIEE/pandapower
+  documentation: https://pandapower.readthedocs.io/en/latest/
+  license: BSD-3-Clause
+  version: "3.5.4"
+  maturity: Production
+
+  # Point us to the code — we'll review the technical details ourselves
+  # NOTE: pandapower's default branch is `develop`.
+  link_to_schema_definition: https://github.com/e2nIEE/pandapower/tree/develop/pandapower/network_schema
+  link_to_validation_logic: https://github.com/e2nIEE/pandapower/tree/develop/pandapower/network_schema/tools/validation
+  link_to_timeseries_management: https://github.com/e2nIEE/pandapower/tree/develop/pandapower/timeseries
+  link_to_entity_relation_diagram: ~   # not published; per-element reference: https://pandapower.readthedocs.io/en/latest/elements.html
+
+# ---------------------------------------------------------------------------
+# 2. What It Is & What It Covers
+# ---------------------------------------------------------------------------
+summary:
+  description: |
+    The pandapower data model represents an electric network as a single Python dict-like
+    container (`net`) holding one pandas DataFrame per element type. Element tables
+    (`net.bus`, `net.line`, `net.trafo`, ...) carry input parameters; a mirrored set of
+    result tables (`net.res_bus`, `net.res_line`, ...) carries the outputs of each
+    analysis. An empty network is created with 33 input tables and 54 result tables,
+    including balanced, three-phase, short-circuit, estimation and OPF result variants.
+    Elements are described by physical nameplate parameters (rated voltage, vector group,
+    short-circuit voltage, length and per-km impedance) rather than by pre-computed
+    admittance matrices; the node breaker model is translated internally into a bus-branch
+    (PYPOWER-style) matrix at solve time.
+    The model was built to close the gap between commercial planning tools — validated,
+    easy-to-parametrize equipment models — and open source tools, which are scriptable
+    and customizable. Intended users are distribution and transmission grid planners, grid
+    operators and researchers who want to script studies that would otherwise be done in
+    a GUI tool such as PowerFactory, PSS Sincal or NEPLAN.
+
+  modeling_domains_supported: |
+    - Balanced AC power flow (Newton-Raphson, Iwamoto, backward/forward sweep,
+      fast-decoupled and Gauss-Seidel via PYPOWER) and linearised DC power flow
+    - Unbalanced three-phase power flow with per-phase loads and generators
+    - AC/DC optimal power flow via PYPOWER or PandaModels.jl/PowerModels.jl, with
+      piecewise-linear or polynomial cost functions on generation and load
+    - Short-circuit calculation to IEC 60909 (3-, 2- and 1-phase faults), including
+      converter-fed infeed per the 2016 revision
+    - State estimation (weighted least squares) with chi-squared and normalized
+      residual bad-data detection
+    - N-1 contingency analysis and limit-violation reporting
+    - Quasi-static time series simulation driven by controller objects
+      (tap changers, Q(U) characteristics, curtailment, storage)
+    - Topological graph analysis via NetworkX, and network reduction / grid equivalents
+    - Overcurrent relay and fuse protection studies
+    Voltage scope runs from LV (0.4 kV) through MV and HV to transmission level,
+    including HVDC and FACTS elements (SVC, TCSC, SSC, VSC, bipolar and stacked VSC).
+
+  what_does_it_NOT_cover: |
+    - Dynamics: no transient stability, EMT, or any time-domain machine/controller
+      dynamics. The model is strictly static / quasi-static.
+    - Capacity expansion and investment planning. There is no investment-period or
+      scenario dimension in the data model; OPF is single-snapshot economic dispatch.
+    - Market modeling and multi-period unit commitment.
+    - Multi-carrier / sector coupling. Gas, heat and water are handled by the sibling
+      project pandapipes, which reuses the same tabular design but is a separate schema.
+    - North-American style distribution feeders with unsymmetrical line design
+      (single- and two-phase laterals, untransposed configurations). The unbalanced
+      power flow assumes symmetrical three-phase line design as common in Europe.
+    - Time series data itself. Profiles live in external DataSource objects, not in the
+      network container, so a serialized `net` is a snapshot, not a study.
+    - Cost and economic data beyond OPF cost curves (no CAPEX, lifetimes, discounting).
+
+  data_captured: |
+    - Grid topology: buses, DC buses, lines, DC lines, 2- and 3-winding transformers,
+      impedances, switches (bus-bus and bus-element), and Ward / extended Ward equivalents
+    - Injections: loads, asymmetric loads, static generators, asymmetric static
+      generators, voltage-controlled generators, motors, storage, external grids,
+      shunts, and DC sources/loads
+    - Power electronics: SVC, TCSC, SSC, VSC, bipolar and stacked VSC, HVDC links
+    - Nameplate and rating data: rated voltage and power, per-km R/X/C/G, thermal current
+      limits, vector groups, tap changer configuration, ZIP load coefficients
+    - Operational status and study control: `in_service` flags on every element, scaling
+      factors, min/max voltage and loading limits, OPF cost tables (poly_cost, pwl_cost)
+    - Measurements for state estimation (bus, line and transformer P/Q/I/V)
+    - Standard type libraries for lines and transformers (`net.std_types`)
+    - Groups (`net.group`) for named cross-element collections
+    - Geographic data as GeoJSON strings in a `geo` column on buses and lines
+    - Controller objects (`net.controller`) referencing elements for time series runs
+    - Result tables per element for each analysis type (balanced, 3-phase,
+      short-circuit, estimation, OPF)
+
+  conceptual_structure: |
+    Element-based and tabular, with bus-centric topology.
+    - One pandas DataFrame per element type, rows indexed by integer element ID.
+      Elements reference buses by that integer index; there are no object pointers.
+    - Buses are nodes; lines, transformers, impedances and DC links are edges.
+      Switches are first-class elements, so substations can be represented at
+      node-breaker detail and topology varied by opening/closing switches without
+      editing the grid.
+    - Strict separation of input tables from result tables: an analysis never writes
+      back into the input tables, so inputs stay reproducible and diffable.
+    - The element model is a user-facing layer. At solve time `pd2ppc` maps it onto an
+      internal bus-branch matrix (`net._ppc`), and results are mapped back into the
+      `res_*` tables. Fused buses, out-of-service elements and closed switches are
+      resolved during that mapping.
+    - Convertible to a NetworkX graph for topological analysis.
+
+# ---------------------------------------------------------------------------
+# 3. Key Design Decisions
+# ---------------------------------------------------------------------------
+design:
+  key_decisions:
+    - decision: One pandas DataFrame per element type, not one object per element
+      rationale: >
+        Vectorised access and modification of thousands of elements, direct use of the
+        full pandas API for filtering/joining/aggregation, and a data structure most
+        Python users already know.
+    - decision: Input tables and result tables are strictly separated (net.bus vs net.res_bus)
+      rationale: >
+        Analyses never mutate inputs, so the same network can be run through power flow,
+        short circuit, OPF and estimation while keeping one authoritative input state.
+        Also makes results easy to discard, compare or version.
+    - decision: Elements parametrized by physical nameplate data, not admittances
+      rationale: >
+        Matches what planners read off datasheets and what commercial tools ask for
+        (vk_percent, vkr_percent, vector group, length_km, r_ohm_per_km), so models can be
+        transferred from PowerFactory or Sincal without hand-derived equivalent circuits.
+    - decision: Element model translated to a bus-branch model only inside the solver
+      rationale: >
+        Keeps the user-facing schema close to physical equipment while the solver still
+        operates on a clean, compact matrix representation.
+    - decision: Switches as explicit elements, including bus-bus switches
+      rationale: >
+        Enables node-breaker substation detail and switching-state studies. Bus-bus
+        switches are resolved by fusing buses at solve time, so detail costs nothing
+        in the solution.
+    - decision: Standard type libraries for lines and transformers
+      rationale: >
+        A cable or transformer is specified by catalog name, not by re-entering
+        parameters; makes reinforcement studies (swap to a larger std type) trivial and
+        keeps parametrization consistent across a model.
+    - decision: Units encoded in column names, no unit library
+      rationale: >
+        `p_mw`, `vn_kv`, `length_km`, `r_ohm_per_km` make the unit unambiguous at the point
+        of use with zero runtime overhead and no dependency on a quantity type.
+        Chosen over a pint-style system for speed and for keeping raw pandas access usable.
+    - decision: Pandera DataFrameSchema per element table (introduced in the 3.x line)
+      rationale: >
+        Retrofits a formal, machine-readable, introspectable schema — types, nullability,
+        range checks, descriptions, required/optional flags — onto the existing tabular
+        model without breaking the pandas-native interface users depend on.
+    - decision: Schemas declared non-strict, extra columns allowed
+      rationale: >
+        Users routinely attach their own metadata columns to element tables; these survive
+        serialization. Extensibility beats airtight schema closure for this user base.
+    - decision: Time series and control logic kept outside the network container
+      rationale: >
+        `net` stays a snapshot of a grid state. Profiles come from DataSource objects and
+        control behaviour from Controller objects, so the same grid can be reused across
+        many studies.
+    - decision: Numerical validation against commercial tools as an acceptance criterion
+      rationale: >
+        Every element model is checked against DIgSILENT PowerFactory or PSS Sincal to
+        tight tolerances (voltage magnitude 1e-6 p.u., element loading 0.001%), which is
+        what makes results defensible in an industrial planning context.
+    - decision: Explicit serialization format version with automatic upgrade on load
+      rationale: >
+        `__format_version__` is stored in every serialized network and `convert_format`
+        migrates older files, so the schema can evolve without orphaning saved models.
+
+  schema_format: |
+    Pandera `DataFrameSchema` objects — one per input table and one per result table
+    variant — declared in `pandapower/network_schema/`. Each column carries a dtype,
+    nullability, required/optional flag, a human-readable description with the unit, and
+    value checks (e.g. `pa.Check.gt(0)` on rated voltage). Cross-column checks are attached
+    at the schema level (e.g. min_vm_pu <= max_vm_pu), and column `metadata` tags such as
+    `{"opf": True}` drive group-dependency checks that require related columns to appear
+    together. Schemas are `strict=False`, so user-added columns are permitted.
+    A plain dtype dictionary (`pandapower/network_structure.py::get_structure_dict`) defines
+    the tables and dtypes used to initialise an empty network. Pandera schemas can be
+    exported to JSON via `schema.to_json()`, which makes the whole element model available
+    as machine-readable metadata for translators.
+
+  implementation_languages:
+    - Python (>= 3.10)
+    - Julia (optional, for OPF/optimisation via PandaModels.jl and PowerModels.jl)
+
+  database_storage_backend: |
+    Primarily file-based and in-memory:
+    - JSON (native format, carries __format_version__ and supports round-tripping of
+      controllers, geodata and user columns)
+    - Excel and pickle
+    - SQL and PostgreSQL via `pandapower/sql_io.py`
+    - MongoDB via pandahub
+    There is no database-backed object store; the in-memory pandas structure is the
+    working representation.
+
+  # NOTE: converter coverage is asymmetric — CIM/CGMES, UCTE, OpenDSS and PowerFactory
+  # are import-only. This is probably the single most relevant fact for this exercise.
+  interoperability:
+    imports_from:
+      - CIM / CGMES (import only, `converter/cim/cim2pp`)
+      - UCTE-DEF (`converter/ucte`)
+      - MATPOWER .m / .mat case files
+      - PYPOWER ppc dicts
+      - PowerFactory (.pfd export via a PowerFactory-side script, with a validation step)
+      - OpenDSS (`converter/opendss/from_dss.py`)
+      - JAO static grid model (European TSO published grid data)
+    exports_to:
+      - CIM / CGMES (currently not open source, soon to be released)
+      - MATPOWER .m / .mat case files
+      - PYPOWER ppc dicts
+      - PandaModels.jl / PowerModels.jl problem formulations
+      - JSON / Excel / pickle / SQL (native serialization)
+      - NetworkX graphs (for topological analysis)
+      - Read by third parties, e.g. PyPSA imports pandapower networks
+
+  data_tool_relation: Tightly coupled
+
+  extensibility: |
+    - Any element table accepts additional user columns; schemas are non-strict and extra
+      columns survive JSON serialization.
+    - New standard types can be registered at runtime into `net.std_types`.
+    - Custom controllers are added by subclassing the Controller base class; they are
+      stored in `net.controller` and participate in the control loop.
+    - Groups allow named, persistent collections spanning multiple element types.
+    - Extension by adding whole new element tables is possible but requires touching the
+      internal `pd2ppc` build step and the result-mapping code, so in practice new element
+      types are contributed upstream rather than added downstream.
+
+  units_handling: |
+    Implicit and positional, encoded in column-name suffixes: `_mw`, `_mvar`, `_kv`, `_ka`,
+    `_km`, `_ohm_per_km`, `_nf_per_km`, `_percent`, `_pu`, `_degree`. There is no unit
+    library and no runtime conversion or dimensional checking — the name is the contract.
+    Absolute quantities are in engineering units (MW, Mvar, kV, kA); per-unit results are
+    referenced to a network-level apparent power base (`net.sn_mva`, default 1 MVA) and to
+    element rated voltages. System frequency is a network attribute (`net.f_hz`, default 50).
+
+  validation_approach: |
+    Three complementary layers:
+    1. Structural/schema — Pandera checks on dtype, nullability, required columns, value
+       ranges, cross-column consistency (min <= max), and metadata-driven group
+       dependencies (e.g. all OPF-related columns present together).
+    2. Physical/model consistency — `pandapower.diagnostic` inspects a built network for
+       modelling problems before solving: disconnected or unsupplied buses, invalid or
+       missing std types, implausible impedance values, nominal voltage mismatches across
+       switches, multiple voltage levels on one bus, overloads and non-convergence causes.
+       The solver additionally performs connectivity checks and reports islands.
+    3. Numerical — the test suite (pytest, run in CI) validates power flow and
+       short-circuit results element by element against DIgSILENT PowerFactory and
+       PSS Sincal within fixed tolerances (1e-6 p.u. voltage magnitude, 0.01 deg angle,
+       0.001% element loading).
+    Note that the pandera layer is comparatively recent;
+
+  governance: |
+    Maintainer team drawn from Fraunhofer IEE and University of Kassel
+    (https://github.com/orgs/e2nIEE/teams/pandapower-maintainers), with community
+    contributions through GitHub issues and pull requests under maintainer review.
+    Breaking changes to the network structure are gated by the serialization format
+    version and an automatic upgrade path (`convert_format`), and a documented deprecation
+    process is followed for API changes
+    (https://pandapower.readthedocs.io/en/latest/about/deprecating.html).
+
+# ---------------------------------------------------------------------------
+# 4. Real-World Usage
+# ---------------------------------------------------------------------------
+usage:
+  tools_built_on_schema:
+    - tool: pandapipes
+      relationship: >
+        Sibling project for gas/heat/water networks; reuses the same tabular
+        element-table design and can be coupled with pandapower for multi-energy studies
+      link: https://github.com/e2nIEE/pandapipes
+    - tool: SimBench
+      relationship: Benchmark dataset of German LV/MV/HV/EHV grids published in pandapower format
+      link: https://github.com/e2nIEE/simbench
+    - tool: Grid2Op
+      relationship: Reinforcement-learning environment for grid operation; uses pandapower as its default backend
+      link: https://github.com/Grid2Op/grid2op
+    - tool: PyPSA
+      relationship: Imports pandapower networks (pandapower listed among its import formats)
+      link: https://github.com/PyPSA/PyPSA
+
+  largest_real_world_dataset: |
+    - MV Oberrhein, shipped with the package, is a real German medium-voltage
+      distribution grid: 179 buses, 181 lines, 2 HV/MV transformers, 322 switches,
+      147 loads and 153 static generators, in two galvanically separated subnetworks with
+      geographic coordinates and time series profiles for PV and load.
+    - At the upper end, the CGMES and UCTE-DEF importers and the JAO static grid model
+      converter are used to bring in ENTSO-E-scale transmission models; the JAO converter
+      in particular targets the published European TSO grid model.
+    - All IEEE example networks (see https://github.com/e2nIEE/pandapower/tree/develop/pandapower/networks/power_system_test_case_jsons)
+    - was tested against large real world networks from industriy partners
+    - was also tested against synthetic networks with >250.000 buses
+
+  who_is_using_it:
+    - Fraunhofer IEE and University of Kassel (e2n) for distribution grid planning research
+    - German DSOs and TSOs and consultancies for grid reinforcement and DER hosting-capacity studies
+    - RTE (via Grid2Op) as the simulation backend for grid-operation RL benchmarks
+    - Academic use is widespread; the 2018 IEEE Transactions on Power Systems reference
+      paper is cited extensively
+    - Many more world wide
+
+  data_available:
+    - geographic_area: Germany (MV distribution — MV Oberrhein)
+      content: |
+        Real medium-voltage grid with full topology, switching state, geographic
+        coordinates, and PV/load time series profiles. Power flow and reinforcement
+        studies; also used for plotting examples.
+      access: public
+    - geographic_area: Germany (LV distribution — Kerber, Dickert, Schutterwald, synthetic voltage control networks)
+      content: |
+        Synthetic and semi-synthetic low-voltage feeder models representing typical German
+        rural, village and suburban network classes. Topology and device parameters only.
+      access: public
+    - geographic_area: Germany (SimBench — LV through EHV)
+      content: |
+        Coherent benchmark dataset spanning voltage levels, with time series for load and
+        generation and defined study cases. Published separately in pandapower format.
+      access: public
+    - geographic_area: Europe (CIGRE MV/LV benchmark grids, IEEE European LV asymmetric feeder)
+      content: |
+        Standard benchmark networks including a three-phase unbalanced LV feeder with
+        1-minute profiles.
+      access: public
+    - geographic_area: International (MATPOWER / IEEE / PEGASE power system test cases)
+      content: Transmission test cases for power flow and OPF benchmarking, converted to pandapower format.
+      access: public
+    - geographic_area: Europe (ENTSO-E area, via CGMES / UCTE / JAO import)
+      content: Transmission grid models imported from published or utility-provided files; the converters are public, the underlying data varies.
+      access: licensed
+
+# ---------------------------------------------------------------------------
+# 5. Limitations & Challenges
+# ---------------------------------------------------------------------------
+challenges:
+  known_limitations:
+    - Static / quasi-static only — no dynamic, transient or EMT capability.
+    - No investment, scenario or multi-period dimension in the data model; a network is a
+      single operating snapshot, so planning studies are orchestrated outside the schema.
+    - Unbalanced power flow assumes symmetrical three-phase line design; North-American
+      style single-/two-phase laterals are currently not representable. Will be added with
+      pandapower 4.0.
+    - Elements are referenced by positional integer index rather than by stable
+      identifier, which makes cross-dataset joins and round-trip identity mapping fragile.
+    - The formal (Pandera) schema layer is recent and does not yet cover every consistency
+      rule that `diagnostic` checks at runtime.
+    - No native geographic/GIS model beyond GeoJSON strings on buses and lines.
+
+  hardest_problems_encountered: |
+    - Evolving the schema without breaking a large installed base. This drove the explicit
+      serialization format version plus an automatic `convert_format` upgrade path on load.
+
+# ---------------------------------------------------------------------------
+# 6. Interoperability & Convergence
+# ---------------------------------------------------------------------------
+interoperability:
+  areas_of_overlap_with_other_schemas: |
+    - PyPSA: closest structural relative — both are pandas-
+    table-per-component models with
+      a bus-centric topology and static/dynamic separation. They diverge on purpose:
+      PyPSA optimises (investment periods, scenarios, carriers, LOPF) while pandapower
+      models equipment physics (vector groups, tap changers, IEC 60909, node-breaker
+      switches). PyPSA already imports pandapower, so a mapping exists in practice.
+    - Grid Data Models (GDM): same element-based instinct, opposite implementation
+      choices — Pydantic objects with pint quantities and explicit phase enums versus
+      pandas tables with implicit unit-suffixed columns. GDM's split-phase and
+      matrix-impedance representation covers the North-American distribution cases
+      pandapower explicitly excludes.
+    - CIM / ENTSO-E: pandapower is a consumer via the CGMES importer. CIM's identified
+      objects, mRIDs and node-breaker topology are richer than the integer-indexed element
+      tables; import is inherently lossy in the identifier and metadata dimension.
+    - Sienna/GridDB and CommonEnergySystemModel: overlap on device parameters and topology;
+      pandapower has no equivalent of their operational-cost and unit-commitment modeling.
+    Common ground across all of them is a bus-centric topology plus a per-device parameter
+    set. The differences are mostly in identity, units, and what surrounds the snapshot.
+
+  what_would_convergence_require: |
+    - A stable, external identifier on every element. Positional integer indices are the
+      single biggest obstacle to lossless round-tripping; a UUID/mRID column that survives
+      serialization would be the highest-value change and is additive, so backwards
+      compatible.
+    - An explicit unit contract. The pandera schemas already carry per-column descriptions
+      with units in text; promoting the unit to structured column metadata would let a
+      translator map conventions mechanically rather than by string parsing.
+    - Backwards compatibility is a hard constraint: pandapower has a large installed base
+      and a documented deprecation process, so convergence realistically happens through a
+      translator plus additive metadata, not by restructuring the element tables.
+    What pandapower should contribute to any common layer: the validated equipment
+    parametrization (nameplate-level transformer and line models with vector groups and tap
+    changers), the standard type library concept, first-class switches for node-breaker
+    detail, and the strict input/result table separation.
+
+  biggest_thing_others_should_know: |
+    The element models are numerically validated against commercial tools element by
+    element — power flow and short-circuit results are checked against DIgSILENT
+    PowerFactory and PSS Sincal to 1e-6 p.u. on voltage magnitude and 0.001% on element
+    loading, in CI. If you are building a translator, pandapower is a good reference
+    implementation for what a transformer or line parameter set has to contain to
+    reproduce commercial-tool results.
+    The cautionary half: as of the 3.x line the entire element model is declared as
+    Pandera schemas that can be dumped to JSON, so it is machine-readable — but units live
+    only in column names and free-text descriptions. Anything built on top should treat
+    the schema as authoritative for structure and types, and not assume it is safe to
+    infer units or preserve identity.
+
+# ---------------------------------------------------------------------------
+# Metadata
+# ---------------------------------------------------------------------------
+card_metadata:
+  prepared_by: Mike Vogt   # draft prepared from public sources — needs maintainer review
+  date: "2026-08-13"
+  info_sheet_version: "1.0"
