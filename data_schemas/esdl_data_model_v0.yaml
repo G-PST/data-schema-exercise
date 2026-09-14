@@ -1,0 +1,338 @@
+# ============================================================================
+# Data Schema Sheet — ESDL (Energy System Description Language)
+# ============================================================================
+# Filled out following the conventions of
+# https://github.com/G-PST/data-schema-exercise (template_data_schema_sheet.yaml)
+#
+# Sources used for every statement below:
+#   - esdl.ecore / esdl.xsd   https://github.com/EnergyTransition/ESDL/tree/master/esdl/model
+#   - Model reference site    https://energytransition.github.io/
+#   - ESDL gitbook            https://energytransition.gitbook.io/esdl/
+#   - esdl.nl, pyESDL (GitHub / PyPI), ESDLMapEditorESSIM GitHub organisation
+# Statements marked "author's assessment" are the preparer's view, not TNO's.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# 1. Identity
+# ---------------------------------------------------------------------------
+identity:
+  schema_name: ESDL (Energy System Description Language)
+  organization: TNO (Netherlands Organisation for Applied Scientific Research)
+  maintainers:
+    - name: Edwin Matthijssen
+      affiliation: TNO
+      github: edwinmatthijssen
+      email: edwin.matthijssen@tno.nl
+    - name: Ewoud Werkman
+      affiliation: TNO
+      github: ewerkman
+      email: ewoud.werkman@tno.nl
+  repository: https://github.com/EnergyTransition/ESDL
+  documentation: https://energytransition.gitbook.io/esdl/   # concepts; class reference at https://energytransition.github.io/ ; general site https://www.esdl.nl/
+  license: Apache-2.0
+  version: "v2606 (version annotation in esdl.ecore on master); latest git tag v2505; Java bundle 2.26.6; pyESDL 26.7.1 on PyPI"
+  maturity: Production   # first public release v1806 (2018), see gitbook release notes
+
+  # Point us to the code — we'll review the technical details ourselves
+  link_to_schema_definition: https://github.com/EnergyTransition/ESDL/blob/master/esdl/model/esdl.ecore
+  # esdl.xsd (generated XML Schema) sits in the same folder.
+  link_to_validation_logic: https://github.com/ESDLMapEditorESSIM/ESDLValidator
+  # Rule-based validator (REST, JSON rule schemas). XSD conformance check: POST endpoint on ESDL Drive (https://drive.esdl.hesi.energy/).
+  link_to_timeseries_management: https://energytransition.gitbook.io/esdl/esdl-concepts/data-types/profiles
+  # Profile classes in esdl.ecore; Python helpers in https://github.com/EnergyTransition/pyESDL/tree/master/esdl/profiles
+  link_to_entity_relation_diagram: https://energytransition.github.io/
+  # Generated from esdl.ecore (class diagrams + attribute/reference tables).
+
+# ---------------------------------------------------------------------------
+# 2. What It Is & What It Covers
+# ---------------------------------------------------------------------------
+summary:
+  description: |
+    ESDL is a modelling language for describing the components of an
+    (hybrid, multi-carrier) energy system and their relations, including
+    the dynamic behaviour of components (profiles). Components are
+    described by their basic functionality in five abstract "energy
+    capabilities": Production, Consumption, Storage, Transport and
+    Conversion. It is machine-readable so that energy-transition
+    calculation tools and GIS applications can exchange models. Intended
+    users: makers of energy modelling tools, energy modellers/advisors,
+    (local) governments. ESDL is a description language, not a solver.
+
+  modeling_domains_supported: |
+    - Multi-carrier energy system description and exchange (electricity,
+      heat, gas, hydrogen, other carriers and matter streams).
+    - Energy-transition scenario modelling at any spatial scale
+      (AreaScopeEnum: building … neighbourhood, district, municipality,
+      region, province, country, continent).
+    - Built environment: buildings, building units, building usage,
+      insulation/glazing, energy-label distributions.
+    - Spatial/GIS: geometries (Point, Line, Polygon, MultiPolygon, WKT,
+      WKB) with a CRS attribute on assets, areas and potentials.
+    - Techno-economic data: CostInformation (investment, installation,
+      fixed/variable O&M, marginal, development, decommissioning costs,
+      discount rate, reference year) on any Asset.
+    - Time-dependent behaviour via Profiles; KPIs; Potentials; Measures;
+      Parties (ownership); Services (control strategies, demand-response,
+      aggregator, energy market); mobility.
+
+  what_does_it_NOT_cover: |
+    - No solver, optimisation formulation or market-clearing logic —
+      these live in the tools that read/write ESDL (ESSIM, MESIDO, Eye…).
+    - No detailed electrical engineering model: Transformer carries
+      primary/secondary voltage, ElectricityCable a length, Bus a
+      voltage; no impedances, phases, dynamics or protection.
+    - Not a measurement/SCADA or bidding format.
+    - Not a tool-internal runtime model.
+
+  data_captured: |
+    - EnergySystem (name, esdlVersion, geographicalScope) containing:
+      Instances, EnergySystemInformation, Parties, Measures, Services,
+      Templates, Groups.
+    - Instance: a representation of the same EnergySystem (e.g. different
+      aggregation level, or dated via InstanceDate / InstanceYear /
+      InstancePeriod); holds one Area.
+    - Area: recursive hierarchy (scope, type) with Assets, Potentials,
+      KPIs, Measures, geometry, social/economic/mobility properties.
+    - Assets (91 concrete classes; 84 EnergyAssets): abstract capability
+      classes Producer, Consumer, Storage, Transport, Conversion with
+      concrete subclasses (e.g. WindTurbine, PVInstallation, HeatPump,
+      CHP, Electrolyzer, Battery, HeatStorage, ElectricityCable, Pipe,
+      Transformer, ElectricityDemand, HeatingDemand). Buildings
+      (Building, BuildingUnit, AggregatedBuilding) are Assets that
+      contain Assets. Each capability has a GenericX and an AggregatedX
+      (aggregationOf) class; Asset has aggregated/aggregationCount.
+    - Connectivity: EnergyAssets have InPort/OutPort objects; a Port
+      references a Carrier and connects to Ports of opposite direction.
+    - Carriers: EnergyCarrier (energyContent, emission, stateOfMatter,
+      composition) and Commodity (ElectricityCommodity, GasCommodity,
+      HeatCommodity, EnergyCommodity); AbstractMatter.
+    - Profiles: GenericProfile → StaticProfile (SingleValue, Range,
+      DateTimeProfile, TimeSeriesProfile, ProfileReference, InitialValue)
+      and ExternalProfile (URIProfile, DataTableProfile, InfluxDBProfile).
+    - QuantityAndUnitType (physicalQuantity, multiplier, unit,
+      perMultiplier, perUnit, perTimeUnit, perScope) on profiles, KPIs
+      and carriers; reusable via QuantityAndUnitReference.
+    - ControlStrategy (DrivenByDemand, DrivenBySupply, DrivenByProfile,
+      StorageStrategy, CurtailmentStrategy, PriorityStrategy,
+      PIDController); behaviour (InputOutputRelation, transfer functions).
+    - KPIs (DoubleKPI, IntKPI, StringKPI, DistributionKPI, *TargetKPI);
+      Potentials (Solar, Wind, Geothermal, Biomass, ResidualHeatSource,
+      UTES, LegalArea, search areas); Measures with Restrictions.
+    - Constraints on asset attributes; DataSources; Notes; AssetTemplates.
+
+  conceptual_structure: |
+    Hierarchical object model defined as an EMF/Ecore meta-model
+    (299 EClasses, 58 EEnums) with a graph of typed Ports on top:
+
+      EnergySystem
+        ├─ Instance[*] ── Area (recursive) ── Asset[*], Potential[*], KPIs, Measures
+        ├─ EnergySystemInformation ── Carriers, Profiles, QuantityAndUnits,
+        │      DataSources, Sectors, Matters, BuildingUsageInformation, …
+        ├─ Parties, Measures, Services, Templates, Group[*]
+
+    Inheritance: Item → Asset → ConnectableAsset → EnergyAsset →
+    {Producer, Consumer, Storage, Transport, Conversion} → concrete
+    classes; ConnectableAsset → ExposedPortsAsset → AbstractBuilding /
+    CompoundAsset. Geometry, CostInformation and KPIs are containment
+    references on Asset (not mixins). Topology is carrier-agnostic: one
+    asset (e.g. a HeatPump) exposes an electricity InPort and a heat
+    OutPort and thereby participates in two networks.
+
+# ---------------------------------------------------------------------------
+# 3. Key Design Decisions
+# ---------------------------------------------------------------------------
+design:
+  key_decisions:
+    - decision: Define ESDL as an EMF/Ecore meta-model; generate the XSD, Java and Python (pyEcore) code from it.
+      rationale: One source of truth; code generation for Java and Python and a browsable model reference are derived from esdl.ecore (gitbook "Software development with ESDL").
+    - decision: Five abstract energy capabilities (Production, Consumption, Storage, Transport, Conversion).
+      rationale: Similar asset types are treated uniformly and capabilities aggregate naturally, e.g. the consumption of a street is the sum of the consumption capabilities of its houses (gitbook "Design principles").
+    - decision: No prescribed level of detail; the same language from a single house to a country.
+      rationale: Users pick the aggregation level that fits their application and data (gitbook "Design principles"); Generic/Aggregated classes and Instances support this.
+    - decision: Typed InPort/OutPort objects that reference a Carrier.
+      rationale: Multi-carrier assets connect to several networks at once; InPorts connect only to OutPorts (esdl.ecore Port documentation).
+    - decision: Profiles as polymorphic classes, static (in-file) or external (URI, data table, InfluxDB), reusable via ProfileReference.
+      rationale: Time-series can be stored in the model or referred to externally, e.g. an energy information system or time-series database (esdl.ecore GenericProfile/ExternalProfile documentation).
+    - decision: Explicit QuantityAndUnitType objects instead of units implied by attribute names.
+      rationale: Units are data; introduced in v180901 for profiles, KPIs and carriers (release notes).
+    - decision: Reusable definitions (Carriers, Profiles, QuantityAndUnits, DataSources, Sectors) centralised in EnergySystemInformation.
+      rationale: Other classes refer to them by reference within the same energy system (esdl.ecore).
+    - decision: Serialize as XML (EMF XMLResource, .esdl extension), not XMI.
+      rationale: ESDL does not use the XMI features; pyESDL registers .esdl with an XMLResource so no XMI namespace/version is written (gitbook "Integration with Python and pyEcore").
+
+  schema_format: |
+    EMF Ecore meta-model (esdl.ecore) with a generated XML Schema
+    (esdl.xsd). Instances are XML files with the .esdl extension.
+    Generated Java API (Maven artifact, Eclipse plug-ins/update site) and
+    Python classes (pyESDL, on pyEcore).
+
+  implementation_languages:
+    - Java (EMF-generated model, edit and editor code)
+    - Python (pyESDL / pyEcore)
+
+  database_storage_backend: |
+    File-based (.esdl XML). ESDL Drive: REST interface on Eclipse CDO as
+    ESDL file store (ESDLMapEditorESSIM/esdl-drive). Profiles may live
+    externally (InfluxDB, data tables, URIs). Energy Data Repository (EDR)
+    publishes reusable ESDL fragments via an API.
+
+  interoperability:
+    imports_from:
+      - Shapefiles of heat networks (EnergyTransition/shapefile-2-esdl)
+      - Excel asset lists (EnergyTransition/excel-2-esdl; Excel converter on esdl.nl)
+      - GNF (EnergyTransition/gnf-2-esdl)
+      - GIS sources (PostGIS, WMS/WFS, CBS-coded tables) via the Geo ESDL service (esdl.nl)
+      - Profiles from CSV / Excel / InfluxDB via pyESDL profile managers
+    exports_to:
+      - ESSIM (native input), MESIDO, Eye market simulator, ESSIM financial (esdl.nl, gitbook)
+      - Loadflow calculation and external models coupled through the MapEditor (ETM, VESTA, PICO, WANDA per esdl-mapeditor README)
+      - Profiles to CSV / Excel / InfluxDB via pyESDL
+
+  data_tool_relation: Data only
+
+  extensibility: |
+    Schema-level: edit esdl.ecore in the Eclipse Modelling Tools and
+    regenerate model/edit/editor code (gitbook "Contributing to ESDL");
+    changes via pull requests. Model-level hooks: GenericProducer/
+    Consumer/Storage/Transport/Conversion for unsupported asset types,
+    AssetTemplates, Groups, Notes, Constraints, KPIs, DataSources.
+    pyESDL ships version_migrations (class/attribute rename mappings) for
+    loading older files. EnergySystem records its esdlVersion.
+
+  units_handling: |
+    Explicit per value: QuantityAndUnitType with PhysicalQuantityEnum
+    (ENERGY, POWER, COST, EMISSION, …), MultiplierEnum (KILO, MEGA, …),
+    UnitEnum (JOULE, WATTHOUR, EURO, …), perMultiplier/perUnit/perTimeUnit
+    for composite units (e.g. EUR per MWh), perScope. Used on profiles,
+    KPIs and carriers; shared definitions in EnergySystemInformation.
+    Plain numeric asset attributes (e.g. Producer.power) carry no unit
+    object. pyESDL provides unit parsing/conversion helpers.
+
+  validation_approach: |
+    1. Structural: Ecore/XSD typing, cardinality and enums (EMF, pyEcore;
+       XSD conformance endpoint on ESDL Drive returning JSON errors).
+    2. Rule-based: ESDLValidator REST service — JSON validation schemas
+       with named rules, severity, select/check functions (e.g. null and
+       range checks, reference comparisons); integrated in the MapEditor.
+    No OCL/SHACL constraint set is published with the meta-model;
+    tool-specific fitness is defined per validation schema.
+
+  governance: |
+    Developed and maintained by TNO; contributions via pull requests on
+    EnergyTransition/ESDL. Releases tagged by year-month (v1806 … v2505)
+    with release notes in the gitbook; pyESDL released separately on PyPI
+    (calendar versions, e.g. 26.7.1). No published RFC or steering
+    process.
+
+# ---------------------------------------------------------------------------
+# 4. Real-World Usage
+# ---------------------------------------------------------------------------
+usage:
+  tools_built_on_schema:
+    - tool: ESDL MapEditor
+      relationship: Map-based web editor for ESDL models; front-end for ESSIM, MESIDO, loadflow and other models
+      link: https://github.com/ESDLMapEditorESSIM/esdl-mapeditor
+    - tool: ESSIM (Energy System Simulator)
+      relationship: Simulates network balancing of a hybrid energy system described in ESDL
+      link: https://github.com/ESDLMapEditorESSIM/essim
+    - tool: pyESDL
+      relationship: Python implementation (all ESDL classes, EnergySystemHandler, profile/geometry/unit helpers)
+      link: https://github.com/EnergyTransition/pyESDL
+    - tool: Energy Data Repository (EDR)
+      relationship: Public library of ESDL asset templates, profiles and key figures with an API
+      link: https://edr.hesi.energy/
+    - tool: ESDL Drive
+      relationship: Central ESDL file store (REST on Eclipse CDO) with schema-validation endpoint
+      link: https://github.com/ESDLMapEditorESSIM/esdl-drive
+    - tool: ESDL Validator
+      relationship: Rule-based validation service for ESDL files
+      link: https://github.com/ESDLMapEditorESSIM/ESDLValidator
+    - tool: MESIDO
+      relationship: MILP design/operation optimiser for multi-energy (heat) networks; ESDL is the input format
+      link: https://github.com/Multi-Energy-Systems-Optimization/mesido
+    - tool: Eye / Eye Flex
+      relationship: Wholesale energy-market simulator using ESDL as input
+      link: https://www.esdl.nl/
+    - tool: docker-toolsuite
+      relationship: Local deployment of MapEditor + ESSIM + supporting services
+      link: https://github.com/ESDLMapEditorESSIM/docker-toolsuite
+
+  largest_real_world_dataset: |
+    Not published. [ESDL team to add: system size, model type, data source.]
+
+  who_is_using_it:
+    - TNO (developer; used in many TNO projects with municipalities, provinces, industry parks and energy consultants)
+    - Esri (ESDL ArcGIS integration, experimental)
+    - Heat-network design (Design Toolkit, Nieuwe Warmte Nu programme); The People Group integrated ESDL for use in heat networks
+    - ESDL converters are used by several external modelling companies: Quintel (Energy Transition Model), Zenmo, The People Group, Gradyent, CE Delft, Witteveen+Bos
+    - North Sea Energy programme — system integration
+    - Several energy consultants use the MapEditor and ESSIM
+
+  data_available:
+    - geographic_area: Netherlands
+      content: |
+        EDR: asset templates (efficiencies, costs, surface area; ETM and
+        TNO Opera sources), example demand/production/price profiles,
+        key figures (CBS SBI sectors; RVO energy content and CO2 per
+        carrier). GitHub examples: ESDL-municipality-example,
+        ESDL-energybalance-example.
+      access: public
+    - geographic_area: Project models (NL / North Sea)
+      content: Project-specific ESDL models; availability depends on the project.
+      access: ceii_or_nda
+
+# ---------------------------------------------------------------------------
+# 5. Limitations & Challenges
+# ---------------------------------------------------------------------------
+challenges:
+  known_limitations:
+    - No published machine-checkable constraint layer (OCL/SHACL) with the meta-model; cross-object consistency is checked per tool or per ESDLValidator schema.
+    - Broad schema; tools use different subsets and conventions, so exchange between two ESDL tools needs agreement on which classes, attributes, carriers and units are used.
+    - Limited electrical depth (no impedances, phases, dynamics); load-flow needs external tools.
+    - Dutch conventions in the meta-model (SectorEnum literals, BAG-based BuildingUnit, CBS/SBI sectors) and in the EDR content.
+    - Contributing to the meta-model requires Eclipse Modelling Tools; several gitbook pages are incomplete (e.g. Quantities and Units marked TODO).
+    - Calendar versioning (vYYMM); latest tag (v2505) lags the version annotation in esdl.ecore on master (v2606); no published deprecation policy (pyESDL does ship migration mappings).
+
+  hardest_problems_encountered: |
+    [ESDL team to fill in.] Author's assessment: the schema guarantees
+    structural validity, but semantic agreement (profile interpretation,
+    aggregation conventions, cost basis/reference year, carrier
+    definitions) still has to be arranged between tools.
+
+# ---------------------------------------------------------------------------
+# 6. Interoperability & Convergence
+# ---------------------------------------------------------------------------
+interoperability:
+  areas_of_overlap_with_other_schemas: |
+    - CIM/CGMES: both UML/MOF-derived meta-models with XML serialisation;
+      CIM is far deeper electrically, ESDL broader (carriers, buildings,
+      areas, costs, potentials).
+    - CESM: closest in intent (tool-neutral multi-energy exchange, explicit
+      units); CESM uses LinkML/QUDT, ESDL Ecore/QuantityAndUnitType.
+    - PyPSA, Sienna/GridDB, GenX, GDM, SAInt: tool-bound models; ESDL's
+      Producer/Consumer/Storage/Transport/Conversion + Port/Carrier can be
+      projected onto their component sets, losing electrical detail.
+
+  what_would_convergence_require: |
+    Author's assessment: (1) a documented mapping of ESDL capabilities,
+    Ports and Carriers to the node/unit/link vocabulary of the hub
+    schema; (2) a machine-checkable constraint set for the exchanged
+    subset; (3) agreed unit and cost-reference-year conventions between
+    QuantityAndUnitType and QUDT; (4) public example models with expected
+    round-trip results. ESDL's multi-carrier ports, built-environment
+    classes, geometries and Instances/Measures should be retained.
+
+  biggest_thing_others_should_know: |
+    ESDL is a description language, not a tool: it covers the whole
+    energy system (all carriers, buildings, areas, costs, potentials,
+    scenarios as Instances/Measures) at a chosen aggregation level, and
+    leaves calculation and detailed electrical modelling to the tools
+    that read it.
+
+# ---------------------------------------------------------------------------
+# Metadata
+# ---------------------------------------------------------------------------
+card_metadata:
+  prepared_by: Thomas van Dijk with Claude, reviewed by the TNO ESDL developer team
+  date: "2026-09-11"
+  info_sheet_version: "1.0"
